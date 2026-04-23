@@ -1,0 +1,999 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HYROX — Live Scoreboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;1,300;1,400&family=Josefin+Sans:wght@300;400;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    /* ── TOKENS FLUIDES ─────────────────────────────────────── */
+    :root {
+      --bg:       #080c06;
+      --surface:  #0f160b;
+      --panel:    #141f0f;
+      --row:      rgba(255,255,255,0.04);
+      --border:   rgba(255,255,255,0.10);
+      --gold:     #f5c030;
+      --gold2:    #ffd860;
+      --gold-bg:  rgba(245,192,48,0.13);
+      --gold-bd:  rgba(245,192,48,0.32);
+      --w:        #ffffff;
+      --w2:       rgba(255,255,255,0.82);
+      --w3:       rgba(255,255,255,0.44);
+      --g1:       #f5c030;
+      --g2:       #d8dde2;
+      --g3:       #d08858;
+      --live:     #3ddc84;
+      --live-bg:  rgba(61,220,132,0.13);
+      --blue:     #7acce8;
+      --orange:   #f0a050;
+      --serif:    'Cormorant Garamond', Georgia, serif;
+      --sans:     'Josefin Sans', sans-serif;
+      --mono:     'DM Mono', monospace;
+
+      /* Espacements fluides */
+      --sp-xs: clamp(4px,  0.4vw, 8px);
+      --sp-sm: clamp(8px,  0.8vw, 14px);
+      --sp-md: clamp(12px, 1.2vw, 20px);
+      --sp-lg: clamp(18px, 2vw,   36px);
+
+      /* Typographie fluide */
+      --fs-brand:  clamp(26px, 3.6vw, 52px);
+      --fs-sub:    clamp(7px,  0.65vw, 10px);
+      --fs-edition:clamp(8px,  0.7vw,  11px);
+      --fs-clock:  clamp(16px, 1.8vw,  26px);
+      --fs-rank:   clamp(20px, 2.6vw,  38px);
+      --fs-name:   clamp(12px, 1.4vw,  20px);
+      --fs-name2:  clamp(10px, 1.1vw,  15px);
+      --fs-time:   clamp(13px, 1.5vw,  21px);
+      --fs-label:  clamp(7px,  0.65vw, 10px);
+      --fs-tab:    clamp(8px,  0.7vw,  11px);
+      --fs-badge:  clamp(8px,  0.7vw,  11px);
+      --fs-arr-n:  clamp(11px, 1vw,    14px);
+      --fs-arr-t:  clamp(12px, 1.1vw,  16px);
+      --fs-arr-r:  clamp(18px, 2vw,    28px);
+
+      /* Largeur panneau arrivées */
+      --arr-w: clamp(180px, 18vw, 268px);
+    }
+
+    * { margin:0; padding:0; box-sizing:border-box; }
+    html, body { height:100%; }
+    body {
+      background:var(--bg); color:var(--w); font-family:var(--sans);
+      height:100dvh; overflow:hidden;
+      display:flex; flex-direction:column;
+    }
+
+    /* ── HEADER ─────────────────────────────────────────────── */
+    .hdr {
+      display:flex; align-items:center; justify-content:space-between;
+      padding:0 var(--sp-lg); height:clamp(54px,7vh,78px); flex-shrink:0;
+      background:var(--surface); border-bottom:1px solid var(--gold-bd);
+    }
+    .brand-main { font-family:var(--serif); font-style:italic; font-size:var(--fs-brand); font-weight:400; letter-spacing:.15em; color:var(--gold2); line-height:1; }
+    .brand-sub  { font-family:var(--sans); font-size:var(--fs-sub); font-weight:300; letter-spacing:.5em; text-transform:uppercase; color:var(--w3); margin-top:2px; }
+    .hdr-mid { text-align:center; }
+    .edition   { font-family:var(--sans); font-size:var(--fs-edition); font-weight:600; letter-spacing:.35em; text-transform:uppercase; color:var(--gold); padding:3px 12px; border:1px solid var(--gold-bd); border-radius:1px; }
+    .hyrox-sub { font-family:var(--serif); font-style:italic; font-size:clamp(11px,1.2vw,16px); color:var(--w2); margin-top:4px; }
+    .hdr-right { display:flex; align-items:center; gap:var(--sp-sm); }
+    .live-badge { display:flex; align-items:center; gap:6px; padding:5px 12px; border:1px solid rgba(61,220,132,.4); border-radius:2px; font-family:var(--sans); font-size:var(--fs-badge); font-weight:700; letter-spacing:.25em; color:var(--live); }
+    .live-dot { width:7px; height:7px; border-radius:50%; background:var(--live); animation:blink 1.4s ease-in-out infinite; flex-shrink:0; }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.15} }
+    .clock { font-family:var(--mono); font-size:var(--fs-clock); font-weight:500; color:var(--w2); letter-spacing:.1em; }
+    .theme-btn { background:var(--gold-bg); border:1px solid var(--gold-bd); border-radius:2px; color:var(--gold); font-size:clamp(14px,1.4vw,18px); width:clamp(28px,3vw,36px); height:clamp(28px,3vw,36px); cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+
+
+    /* ── NAVIGATION TABS ── */
+    .nav{display:flex;height:clamp(34px,4.2vh,44px);flex-shrink:0;background:var(--surface);border-bottom:1px solid var(--border);}
+    .tab{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;font-family:var(--sans);font-size:clamp(8px,.68vw,11px);font-weight:700;letter-spacing:.3em;text-transform:uppercase;color:var(--w3);cursor:pointer;border-bottom:2px solid transparent;transition:all .25s;user-select:none;}
+    .tab:hover{color:var(--w2);background:rgba(255,255,255,.03);}
+    .tab.on{color:var(--gold);border-bottom-color:var(--gold);background:var(--gold-bg);}
+    /* ── VIEWS ── */
+    .views-area{flex:1;min-width:0;overflow:hidden;padding:var(--sp-sm) var(--sp-sm) var(--sp-sm) var(--sp-md);display:flex;flex-direction:column;}
+    .view{display:none;flex:1;flex-direction:column;min-height:0;animation:fadein .35s ease;}
+    .view.on{display:flex;}
+    #v-solo,#v-duo{overflow-y:scroll;}
+    #v-solo::-webkit-scrollbar,#v-duo::-webkit-scrollbar{width:0;}
+    @keyframes fadein{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+    .rank-header{display:flex;align-items:baseline;gap:var(--sp-sm);padding-bottom:var(--sp-sm);margin-bottom:var(--sp-sm);border-bottom:1px solid var(--border);flex-shrink:0;}
+    .rank-title{font-family:var(--serif);font-style:italic;font-size:clamp(20px,2.4vw,32px);color:var(--w);}
+    .rank-sub{font-family:var(--sans);font-size:var(--fs-label);font-weight:300;letter-spacing:.3em;text-transform:uppercase;color:var(--w3);}
+    /* ── EN COURS — racing cards ── */
+    .racing-header{display:flex;align-items:center;gap:var(--sp-sm);padding-bottom:var(--sp-sm);margin-bottom:var(--sp-sm);border-bottom:1px solid var(--border);flex-shrink:0;}
+    .racing-title{font-family:var(--serif);font-style:italic;font-size:clamp(20px,2.4vw,32px);color:var(--w);}
+    .racing-sub{font-family:var(--sans);font-size:var(--fs-label);font-weight:300;letter-spacing:.3em;text-transform:uppercase;color:var(--w3);}
+    .racing-cnt{margin-left:auto;font-family:var(--mono);font-size:var(--fs-label);color:var(--live);}
+    .racing-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr));gap:clamp(8px,.9vw,14px);overflow-y:scroll;flex:1;align-content:start;}
+    .racing-grid::-webkit-scrollbar{width:0;}
+    .rc-card{background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--live);border-radius:3px;padding:var(--sp-sm);display:flex;flex-direction:column;gap:var(--sp-xs);}
+    .rc-top{display:flex;align-items:flex-start;justify-content:space-between;gap:var(--sp-xs);}
+    .rc-names{flex:1;min-width:0;}
+    .rc-name{font-family:var(--sans);font-size:var(--fs-name);font-weight:700;color:var(--w);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .rc-name2{font-family:var(--sans);font-size:var(--fs-name2);color:var(--w3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px;}
+    .rc-badges{display:flex;gap:4px;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end;}
+    .rc-div{height:1px;background:var(--border);}
+    .rc-seg-row{display:flex;align-items:center;gap:var(--sp-sm);}
+    .rc-seg-lbl{font-family:var(--sans);font-size:var(--fs-label);font-weight:700;letter-spacing:.2em;text-transform:uppercase;white-space:nowrap;min-width:clamp(60px,7vw,110px);}
+    .rc-seg-lbl.run-seg{color:var(--blue);}
+    .rc-seg-lbl.stat-seg{color:var(--orange);}
+    .rc-dots{display:flex;gap:2px;flex-wrap:nowrap;overflow:hidden;flex:1;}
+    .rc-bottom{display:flex;align-items:center;justify-content:space-between;}
+    .rc-elapsed{font-family:var(--mono);font-size:clamp(16px,1.7vw,24px);font-weight:500;color:var(--live);}
+    .rc-pct{font-family:var(--sans);font-size:var(--fs-label);color:var(--w3);text-align:right;}
+    .rc-pct span{display:block;font-family:var(--mono);font-size:var(--fs-label);color:var(--w3);}
+    .racing-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;gap:var(--sp-sm);color:var(--w3);}
+    .racing-empty-icon{font-size:clamp(28px,4vw,48px);}
+    .racing-empty-txt{font-family:var(--sans);font-size:var(--fs-label);font-weight:300;letter-spacing:.3em;text-transform:uppercase;text-align:center;}
+
+    /* ── PROGRESS BAR ───────────────────────────────────────── */
+    .pbar  { flex-shrink:0; height:3px; background:rgba(245,192,48,.1); }
+    .pfill { height:100%; background:linear-gradient(90deg,var(--gold),var(--gold2)); transition:width .5s linear; }
+
+    /* ── LAYOUT ─────────────────────────────────────────────── */
+    .main-layout {
+      flex:1; min-height:0;
+      display:grid;
+      grid-template-columns: 1fr var(--arr-w);
+      grid-template-rows: 1fr;
+    }
+    @media (max-width: 720px) {
+      .main-layout { grid-template-columns:1fr; grid-template-rows:1fr auto; }
+      .arrivals-panel { border-left:none; border-top:1px solid var(--gold-bd); height:clamp(140px,25vh,200px); flex-direction:row; }
+      .arr-list { display:flex; flex-direction:row; overflow-x:auto; overflow-y:hidden; padding:6px; }
+      .arr-row  { min-width:160px; flex-shrink:0; }
+    }
+
+    /* ── ZONE CATÉGORIES ────────────────────────────────────── */
+    .cat-area {
+      min-width:0; overflow:hidden;
+      padding:var(--sp-sm) var(--sp-sm) var(--sp-sm) var(--sp-md);
+      display:flex; flex-direction:column; gap:var(--sp-sm);
+    }
+
+    /* Live banner */
+    .live-banner { display:none; align-items:center; gap:var(--sp-sm); background:var(--live-bg); border:1px solid rgba(61,220,132,.35); border-radius:2px; padding:var(--sp-xs) var(--sp-sm); flex-shrink:0; overflow:hidden; }
+    .lb-left { display:flex; align-items:center; gap:var(--sp-xs); flex-shrink:0; border-right:1px solid rgba(61,220,132,.2); padding-right:var(--sp-sm); }
+    .lb-status { display:flex; align-items:center; gap:5px; font-family:var(--sans); font-size:var(--fs-label); font-weight:700; letter-spacing:.2em; text-transform:uppercase; color:var(--live); }
+    .lb-sdot { width:7px; height:7px; border-radius:50%; background:var(--live); animation:blink 1.4s ease-in-out infinite; flex-shrink:0; }
+    .lb-heat { font-family:var(--serif); font-style:italic; font-size:clamp(22px,2.4vw,32px); color:var(--live); line-height:1; }
+    .lb-mid  { flex:1; min-width:0; display:flex; flex-direction:column; gap:3px; }
+    .lb-names { font-family:var(--sans); font-size:var(--fs-badge); font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--w2); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .lb-seg  { font-family:var(--sans); font-size:var(--fs-label); font-weight:600; letter-spacing:.2em; text-transform:uppercase; }
+    .lb-seg.run-seg  { color:var(--blue); }
+    .lb-seg.stat-seg { color:var(--orange); }
+    .prog-track { display:flex; gap:2px; flex-wrap:nowrap; overflow:hidden; }
+    .pdot { width:clamp(8px,1vw,13px); height:clamp(8px,1vw,13px); border-radius:2px; transition:all .4s; flex-shrink:0; }
+    .pdot.run  { background:rgba(122,204,232,.18); border:1px solid rgba(122,204,232,.3); }
+    .pdot.stat { background:rgba(240,160,80,.18);  border:1px solid rgba(240,160,80,.3);  }
+    .pdot.run.done   { background:var(--blue);   border-color:var(--blue); }
+    .pdot.stat.done  { background:var(--orange); border-color:var(--orange); }
+    .pdot.run.active  { background:var(--blue);   border-color:var(--blue);   animation:blink .9s ease infinite; }
+    .pdot.stat.active { background:var(--orange); border-color:var(--orange); animation:blink .9s ease infinite; }
+    .lb-right { flex-shrink:0; text-align:right; border-left:1px solid rgba(61,220,132,.2); padding-left:var(--sp-sm); }
+    .lb-elapsed { font-family:var(--mono); font-size:var(--fs-label); color:var(--w3); letter-spacing:.1em; text-transform:uppercase; }
+    .lb-chrono  { font-family:var(--mono); font-size:clamp(18px,2vw,28px); font-weight:500; color:var(--live); }
+    .lb-bar-wrap { width:80px; height:3px; background:rgba(61,220,132,.15); border-radius:1px; margin-top:3px; margin-left:auto; }
+    .lb-bar-fill { height:100%; background:var(--live); border-radius:1px; transition:width 1s linear; }
+
+    /* ── GRILLE CATÉGORIES ──────────────────────────────────── */
+    .cat-grid {
+      display:grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
+      gap:clamp(8px,1vw,14px);
+      align-content:start;
+      padding-bottom:var(--sp-sm);
+    }
+
+    /* Panel */
+    .cat-panel { display:flex; flex-direction:column; overflow:hidden; border:1px solid var(--border); border-radius:3px; background:var(--surface); min-height:0; }
+
+    /* Accent couleur par catégorie */
+    .cat-solo-open  .cat-ph { border-bottom-color:rgba(122,204,232,.3); background:rgba(122,204,232,.07); }
+    .cat-solo-open  .cat-ph-name { color:#7acce8; }
+    .cat-solo-open  .cat-ph-bar  { background:#7acce8; }
+    .cat-solo-pro   .cat-ph { border-bottom-color:rgba(200,150,240,.3); background:rgba(200,150,240,.07); }
+    .cat-solo-pro   .cat-ph-name { color:#c896f0; }
+    .cat-solo-pro   .cat-ph-bar  { background:#c896f0; }
+    .cat-duo-open   .cat-ph { border-bottom-color:rgba(240,160,80,.3);  background:rgba(240,160,80,.07); }
+    .cat-duo-open   .cat-ph-name { color:#f0a050; }
+    .cat-duo-open   .cat-ph-bar  { background:#f0a050; }
+    .cat-duo-mixte  .cat-ph { border-bottom-color:rgba(128,232,160,.3); background:rgba(128,232,160,.07); }
+    .cat-duo-mixte  .cat-ph-name { color:#80e8a0; }
+    .cat-duo-mixte  .cat-ph-bar  { background:#80e8a0; }
+    .cat-duo-pro    .cat-ph { border-bottom-color:rgba(245,192,48,.3);  background:rgba(245,192,48,.07); }
+    .cat-duo-pro    .cat-ph-name { color:#f5c030; }
+    .cat-duo-pro    .cat-ph-bar  { background:#f5c030; }
+    .cat-default    .cat-ph-name { color:var(--w2); }
+    .cat-default    .cat-ph-bar  { background:var(--w3); }
+
+    .cat-ph {
+      display:flex; align-items:center; gap:var(--sp-xs);
+      padding:clamp(6px,.7vh,10px) var(--sp-sm);
+      border-bottom:1px solid var(--border); flex-shrink:0;
+    }
+    .cat-ph-bar  { width:3px; height:clamp(14px,1.8vh,20px); border-radius:1px; flex-shrink:0; }
+    .cat-ph-name { font-family:var(--sans); font-size:var(--fs-edition); font-weight:700; letter-spacing:.35em; text-transform:uppercase; }
+    .cat-ph-count { margin-left:auto; font-family:var(--mono); font-size:var(--fs-label); color:var(--w3); }
+
+    /* En-têtes colonnes */
+    .cat-thead {
+      display:grid;
+      grid-template-columns: var(--col-rank) 1fr var(--col-heat) var(--col-time);
+      gap:0 var(--sp-xs);
+      padding:clamp(4px,.5vh,7px) var(--sp-sm);
+      font-family:var(--sans); font-size:var(--fs-label); font-weight:700; letter-spacing:.2em; text-transform:uppercase;
+      color:var(--gold); opacity:.75; border-bottom:1px solid var(--border); flex-shrink:0;
+    }
+    .cat-tbody { overflow-y:auto; flex:1; min-height:0; }
+    .cat-tbody::-webkit-scrollbar { width:2px; }
+    .cat-tbody::-webkit-scrollbar-thumb { background:var(--gold-bd); }
+
+    /* Colonnes responsives via custom props */
+    :root {
+      --col-rank: clamp(32px,3.8vw,52px);
+      --col-heat: clamp(28px,3.2vw,44px);
+      --col-time: clamp(70px,8vw,96px);
+    }
+
+    .cat-row {
+      display:grid;
+      grid-template-columns: var(--col-rank) 1fr var(--col-heat) var(--col-time);
+      gap:0 var(--sp-xs);
+      align-items:center;
+      padding:clamp(8px,.9vh,13px) var(--sp-sm);
+      margin-bottom:1px;
+      border-left:3px solid transparent;
+      position:relative;
+    }
+    .cat-row.p1 { background:rgba(245,192,48,.09); border-left-color:var(--g1); }
+    .cat-row.p2 { background:rgba(216,221,226,.05); border-left-color:var(--g2); }
+    .cat-row.p3 { background:rgba(208,136,88,.06); border-left-color:var(--g3); }
+    .cat-row.px { background:var(--row); }
+    @keyframes flashUp   { 0%,100%{background:transparent} 40%{background:rgba(61,220,132,.22)} }
+    @keyframes flashDown { 0%,100%{background:transparent} 40%{background:rgba(224,80,80,.15)} }
+    .cat-row.rank-up   { animation:flashUp   1.2s ease; }
+    .cat-row.rank-down { animation:flashDown 1.2s ease; }
+    .rdelta { position:absolute; right:3px; top:50%; transform:translateY(-50%); font-family:var(--sans); font-size:clamp(8px,.7vw,10px); font-weight:700; padding:2px 4px; border-radius:2px; pointer-events:none; }
+    .rdelta.up   { color:#0a2010; background:var(--live); }
+    .rdelta.down { color:#fff;    background:rgba(224,80,80,.7); }
+
+    .crn { font-family:var(--serif); font-style:italic; font-size:var(--fs-rank); font-weight:400; text-align:center; line-height:1; }
+    .p1 .crn { color:var(--g1); }
+    .p2 .crn { color:var(--g2); }
+    .p3 .crn { color:var(--g3); }
+    .px .crn { font-style:normal; font-size:calc(var(--fs-rank) * .62); color:var(--w3); }
+
+    .can { display:flex; flex-direction:column; min-width:0; }
+    .cnom  { font-family:var(--sans); font-size:var(--fs-name); font-weight:700; color:var(--w); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; line-height:1.2; }
+    .cnom2 { font-family:var(--sans); font-size:var(--fs-name2); font-weight:400; color:var(--w3); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .p1 .cnom { color:var(--gold2); }
+
+    .chtag { display:inline-block; font-family:var(--sans); font-size:var(--fs-label); font-weight:600; letter-spacing:.1em; padding:2px clamp(4px,.4vw,7px); border-radius:1px; color:var(--gold); background:var(--gold-bg); border:1px solid var(--gold-bd); text-align:center; white-space:nowrap; }
+    .ctime { text-align:right; }
+    .ctime-val  { font-family:var(--mono); font-size:var(--fs-time); font-weight:500; color:var(--gold2); }
+    .ctime-none { font-family:var(--mono); font-size:calc(var(--fs-time)*.82); color:var(--w3); }
+    .cat-empty  { padding:var(--sp-md); text-align:center; font-family:var(--sans); font-size:var(--fs-label); font-weight:300; letter-spacing:.3em; text-transform:uppercase; color:var(--w3); }
+    .errmsg { margin:var(--sp-sm); padding:var(--sp-sm) var(--sp-md); background:rgba(220,80,60,.08); border:1px solid rgba(220,80,60,.3); border-radius:1px; font-family:var(--sans); font-size:var(--fs-badge); color:#e08868; text-align:center; }
+
+    /* ── PANNEAU ARRIVÉES ───────────────────────────────────── */
+    .arrivals-panel {
+      min-width:0; background:var(--surface);
+      border-left:1px solid var(--gold-bd);
+      display:flex; flex-direction:column; overflow:hidden;
+    }
+    .arr-header { display:flex; align-items:center; gap:var(--sp-xs); padding:clamp(8px,.9vh,13px) var(--sp-sm); border-bottom:1px solid var(--gold-bd); flex-shrink:0; }
+    .arr-flag  { font-size:clamp(13px,1.3vw,17px); line-height:1; }
+    .arr-title { font-family:var(--sans); font-size:var(--fs-edition); font-weight:700; letter-spacing:.35em; text-transform:uppercase; color:var(--gold); }
+    .arr-count { margin-left:auto; font-family:var(--mono); font-size:var(--fs-label); color:var(--w3); }
+    .arr-list  { flex:1; overflow-y:auto; padding:4px 0; }
+    .arr-list::-webkit-scrollbar { width:2px; }
+    .arr-list::-webkit-scrollbar-thumb { background:var(--gold-bd); border-radius:1px; }
+
+    .arr-row { display:flex; align-items:center; gap:var(--sp-xs); padding:clamp(7px,.8vh,11px) var(--sp-sm); border-left:3px solid transparent; position:relative; }
+    .arr-row.p1 { border-left-color:var(--g1); background:rgba(245,192,48,.07); }
+    .arr-row.p2 { border-left-color:var(--g2); background:rgba(216,221,226,.04); }
+    .arr-row.p3 { border-left-color:var(--g3); background:rgba(208,136,88,.05); }
+    .arr-row.px { border-left-color:rgba(255,255,255,.08); }
+    @keyframes arrFlash { 0%{background:rgba(61,220,132,.28)} 100%{background:transparent} }
+    .arr-row.new-arr { animation:arrFlash 2.4s ease forwards; }
+
+    .arr-rank { font-family:var(--serif); font-style:italic; font-size:var(--fs-arr-r); line-height:1; text-align:center; width:clamp(22px,2.4vw,32px); flex-shrink:0; }
+    .p1 .arr-rank { color:var(--g1); }
+    .p2 .arr-rank { color:var(--g2); }
+    .p3 .arr-rank { color:var(--g3); }
+    .px .arr-rank { font-style:normal; font-size:calc(var(--fs-arr-r)*.65); color:var(--w3); }
+    .arr-info  { flex:1; min-width:0; }
+    .arr-nom   { font-family:var(--sans); font-size:var(--fs-arr-n); font-weight:700; color:var(--w); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .arr-nom2  { font-family:var(--sans); font-size:calc(var(--fs-arr-n)*.88); color:var(--w3); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .arr-meta  { font-family:var(--sans); font-size:calc(var(--fs-arr-n)*.82); font-weight:600; letter-spacing:.12em; text-transform:uppercase; color:var(--w3); margin-top:1px; }
+    .arr-time  { text-align:right; flex-shrink:0; }
+    .arr-final { font-family:var(--mono); font-size:var(--fs-arr-t); font-weight:500; color:var(--gold2); }
+    .arr-heat  { font-family:var(--sans); font-size:calc(var(--fs-arr-n)*.8); font-weight:600; letter-spacing:.15em; color:var(--w3); text-align:center; margin-top:1px; }
+    .arr-empty { padding:var(--sp-lg) var(--sp-sm); text-align:center; font-family:var(--sans); font-size:var(--fs-label); font-weight:300; letter-spacing:.3em; text-transform:uppercase; color:var(--w3); line-height:2.2; }
+
+    /* ── SCHEDULE BAR ───────────────────────────────────────── */
+    .sched { flex-shrink:0; height:clamp(80px,10.5vh,108px); background:var(--panel); border-top:1px solid var(--gold-bd); display:flex; align-items:stretch; overflow:hidden; }
+    .sched-label { display:flex; flex-direction:column; justify-content:center; gap:3px; padding:0 var(--sp-sm); border-right:1px solid var(--border); flex-shrink:0; width:clamp(80px,9vw,120px); }
+    .sl-title { font-family:var(--sans); font-size:var(--fs-label); font-weight:700; letter-spacing:.3em; text-transform:uppercase; color:var(--gold); }
+    .sl-sub   { font-family:var(--sans); font-size:var(--fs-label); font-weight:300; letter-spacing:.1em; text-transform:uppercase; color:var(--w3); }
+    .sched-cards { display:flex; align-items:center; gap:var(--sp-xs); padding:var(--sp-xs) var(--sp-sm); overflow-x:auto; flex:1; }
+    .sched-cards::-webkit-scrollbar { height:0; }
+
+    .ecard { flex-shrink:0; width:clamp(140px,14vw,175px); background:rgba(255,255,255,.04); border:1px solid var(--border); border-radius:2px; padding:clamp(6px,.8vh,10px) var(--sp-sm); display:flex; flex-direction:column; gap:3px; }
+    .ecard.live-card { background:var(--live-bg); border-color:rgba(61,220,132,.4); }
+    .ecard.next-card { background:var(--gold-bg); border-color:var(--gold-bd); }
+    .ecard.done-card { opacity:.3; }
+    .ecard-top  { display:flex; align-items:center; justify-content:space-between; }
+    .ecard-heat { font-family:var(--sans); font-size:var(--fs-badge); font-weight:700; letter-spacing:.15em; color:var(--w); }
+    .ecard-badge { font-family:var(--sans); font-size:clamp(7px,.6vw,9px); font-weight:700; letter-spacing:.12em; text-transform:uppercase; padding:2px 6px; border-radius:1px; }
+    .badge-live { background:var(--live); color:#082010; animation:blink 1.4s ease-in-out infinite; }
+    .badge-next { background:var(--gold); color:#3a2800; }
+    .badge-time { background:rgba(255,255,255,.12); color:var(--w2); }
+    .badge-done { background:rgba(255,255,255,.06); color:var(--w3); }
+    .ecard-cat  { font-family:var(--sans); font-size:var(--fs-label); font-weight:600; letter-spacing:.15em; text-transform:uppercase; color:var(--w3); }
+    .ecard-time { font-family:var(--mono); font-size:var(--fs-badge); color:var(--w2); }
+    .ecard-athletes { font-family:var(--sans); font-size:var(--fs-label); color:var(--w3); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+    /* ── CONFETTI ───────────────────────────────────────────── */
+    #confetti-layer { position:fixed; inset:0; pointer-events:none; z-index:9999; overflow:hidden; }
+    .cp { position:absolute; top:-12px; border-radius:2px; animation:cfFall linear forwards; }
+    @keyframes cfFall { 0%{transform:translateY(0) rotate(0deg);opacity:1} 100%{transform:translateY(105vh) rotate(780deg);opacity:0} }
+
+    /* ── POPUP DÉPART PUNCHY ── */
+    #dep-overlay{position:fixed;inset:0;z-index:9998;background:rgba(0,0,0,.97);display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .35s ease;}
+    #dep-overlay.show{opacity:1;pointer-events:auto;}
+    #dep-overlay::before{content:'';position:absolute;inset:0;background:linear-gradient(rgba(61,220,132,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(61,220,132,.03) 1px,transparent 1px);background-size:52px 52px;pointer-events:none;}
+    #dep-card{position:relative;text-align:center;width:min(720px,95vw);border-radius:4px;overflow:hidden;border:1px solid rgba(61,220,132,.4);box-shadow:0 0 80px rgba(61,220,132,.18),0 0 200px rgba(61,220,132,.06);}
+    #dep-close{position:absolute;top:10px;right:14px;background:none;border:none;cursor:pointer;font-size:18px;color:rgba(255,255,255,.3);z-index:2;transition:color .2s;}
+    #dep-close:hover{color:var(--w);}
+    /* Top bar */
+    #dep-top-bar{background:rgba(61,220,132,.07);border-bottom:1px solid rgba(61,220,132,.2);padding:clamp(12px,2vh,20px) clamp(20px,3vw,40px);}
+    #dep-heat-line{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:8px;}
+    #dep-heat-badge2{font-family:var(--sans);font-size:clamp(9px,.8vw,12px);font-weight:700;letter-spacing:.35em;text-transform:uppercase;color:#050e08;background:var(--live);padding:4px 16px;border-radius:2px;}
+    #dep-cat2{font-family:var(--sans);font-size:clamp(9px,.8vw,11px);font-weight:600;letter-spacing:.25em;text-transform:uppercase;color:var(--w3);}
+    #dep-names2{font-family:var(--sans);font-size:clamp(16px,2.2vw,30px);font-weight:700;color:var(--w);letter-spacing:.04em;line-height:1.3;}
+    .dep-name2{display:block;}
+    /* Zone countdown */
+    #dep-center{background:#060d07;padding:clamp(28px,5vh,56px) clamp(24px,4vw,48px) clamp(20px,3.5vh,40px);}
+    #dep-label2{font-family:var(--sans);font-size:clamp(9px,.75vw,11px);font-weight:700;letter-spacing:.6em;text-transform:uppercase;color:var(--live);opacity:.6;margin-bottom:clamp(6px,1.2vh,14px);}
+    #dep-countdown{font-family:var(--serif);font-style:italic;font-size:clamp(90px,15vw,170px);font-weight:300;line-height:1;color:var(--gold2);transition:color .15s;display:block;}
+    #dep-countdown.c3{color:#f0a050;}
+    #dep-countdown.c2{color:#e84040;}
+    #dep-countdown.c1{color:#ff1a1a;}
+    /* Punch animation sur chaque chiffre 3-2-1 */
+    @keyframes numPunch{0%{transform:scale(1.6);opacity:.5}50%{transform:scale(.92)}100%{transform:scale(1);opacity:1}}
+    .num-punch{animation:numPunch .38s cubic-bezier(.22,.61,.36,1) forwards;}
+    #dep-unit{font-family:var(--sans);font-size:clamp(8px,.7vw,11px);font-weight:300;letter-spacing:.5em;text-transform:uppercase;color:var(--w3);margin-top:6px;}
+    /* GO explosif */
+    @keyframes goBlast{
+      0%  {transform:scale(.1) rotate(-6deg);opacity:0;letter-spacing:1em;}
+      45% {transform:scale(1.3) rotate(2deg);opacity:1;letter-spacing:.18em;}
+      65% {transform:scale(.94)rotate(0);}
+      85% {transform:scale(1.06);}
+      100%{transform:scale(1)rotate(0);}
+    }
+    #dep-go{display:none;font-family:var(--sans);font-size:clamp(72px,12vw,140px);font-weight:900;letter-spacing:.18em;text-transform:uppercase;color:var(--live);line-height:1;text-shadow:0 0 100px rgba(61,220,132,1),0 0 40px rgba(61,220,132,.7);}
+    #dep-go.blasting{animation:goBlast .55s cubic-bezier(.17,.67,.3,1.33) forwards;}
+    /* Flash overlay au GO */
+    @keyframes overlayFlash{0%{background:rgba(61,220,132,.65);}40%{background:rgba(61,220,132,.12);}100%{background:rgba(0,0,0,.97);}}
+    #dep-overlay.go-flash::after{content:'';position:absolute;inset:0;animation:overlayFlash .75s ease-out forwards;pointer-events:none;z-index:0;}
+    /* Ondes de choc */
+    @keyframes shockwave{0%{transform:translate(-50%,-50%) scale(.05);opacity:1;border-width:8px;}100%{transform:translate(-50%,-50%) scale(5);opacity:0;border-width:1px;}}
+    .shockwave{position:absolute;top:50%;left:50%;width:120px;height:120px;border-radius:50%;border:6px solid var(--live);animation:shockwave .9s ease-out forwards;pointer-events:none;z-index:5;}
+    .shockwave2{animation-delay:.18s;border-color:var(--gold);}
+    #dep-bar-wrap{height:5px;background:rgba(255,255,255,.05);}
+    #dep-bar{height:100%;width:0%;background:linear-gradient(90deg,var(--live),var(--gold));transition:width 1s linear;}
+
+    /* ── THÈME CLAIR ────────────────────────────────────────── */
+    body.light {
+      --bg:#fff; --surface:#f4ede0; --panel:#ede4d4; --row:#f8f4ec; --border:#c8bca8;
+      --gold:#6b4200; --gold2:#8a5800; --gold-bg:#f0e4cc; --gold-bd:#c8a860;
+      --w:#0a1206; --w2:#2a3820; --w3:#5a7048;
+      --g1:#8a5800; --g2:#2a4858; --g3:#6a3010;
+      --live:#0a6830; --live-bg:#d8f0e4;
+      --blue:#0a5090; --orange:#8a4400;
+    }
+    body.light .cat-panel    { background:var(--surface); border-color:var(--border); }
+    body.light .arrivals-panel { background:var(--surface); }
+    body.light .cnom, body.light .arr-nom { color:var(--w); }
+    body.light .ctime-val, body.light .arr-final { color:var(--gold); }
+    body.light .live-banner  { background:#d8f0e4; border-color:#6abf90; }
+    body.light .sched        { background:#ede4d4; border-top-color:#c8a860; }
+    body.light .ecard        { background:#f4ede0; border-color:#c8bca8; }
+    body.light .ecard.live-card { background:#d8f0e4; border-color:#6abf90; }
+    body.light .pfill        { background:linear-gradient(90deg,#8a5800,#b07820); }
+  </style>
+</head>
+<body>
+
+<div class="hdr">
+  <div>
+    <div class="brand-main">HYROX</div>
+    <div class="brand-sub">Fitness Racing Competition</div>
+  </div>
+  <div class="hdr-mid">
+    <div class="edition">&#201;dition 1</div>
+    <div class="hyrox-sub">Epicure Social Club &middot; Tours</div>
+  </div>
+  <div class="hdr-right">
+    <div class="live-badge"><div class="live-dot"></div>Live</div>
+    <button class="theme-btn" id="theme-btn" onclick="toggleTheme()">&#9728;</button>
+    <div class="clock" id="clock">--:--:--</div>
+  </div>
+</div>
+
+<div class="pbar"><div class="pfill" id="pfill" style="width:100%"></div></div>
+
+<!-- NAVIGATION -->
+<div class="nav">
+  <div class="tab on" data-v="encours" onclick="go('encours',true)">&#9654;&nbsp; En cours</div>
+  <div class="tab"    data-v="solo"    onclick="go('solo',true)">&#9670;&nbsp; Solo</div>
+  <div class="tab"    data-v="duo"     onclick="go('duo',true)">&#9672;&nbsp; Duo</div>
+</div>
+
+<div class="main-layout">
+  <div class="views-area">
+
+    <!-- VUE EN COURS -->
+    <div class="view on" id="v-encours">
+      <div class="racing-header">
+        <div><div class="racing-title">En course</div><div class="racing-sub">Athl&egrave;tes ayant commenc&eacute; &mdash; pas encore arriv&eacute;s</div></div>
+        <span class="racing-cnt" id="racing-cnt">—</span>
+      </div>
+      <div class="racing-grid" id="racing-grid">
+        <div class="racing-empty"><div class="racing-empty-icon">&#9203;</div><div class="racing-empty-txt">En attente du<br>d&eacute;part&hellip;</div></div>
+      </div>
+    </div>
+
+    <!-- VUE SOLO -->
+    <div class="view" id="v-solo">
+      <div class="rank-header">
+        <div class="rank-title">Classement Solo</div>
+        <div class="rank-sub">Open &middot; Pro &mdash; Hommes &middot; Femmes</div>
+      </div>
+      <div class="cat-grid" id="solo-grid"></div>
+    </div>
+
+    <!-- VUE DUO -->
+    <div class="view" id="v-duo">
+      <div class="rank-header">
+        <div class="rank-title">Classement Duo</div>
+        <div class="rank-sub">Open &middot; Pro &middot; Mixte</div>
+      </div>
+      <div class="cat-grid" id="duo-grid"></div>
+    </div>
+
+  </div>
+  <div class="arrivals-panel">
+    <div class="arr-header">
+      <span class="arr-flag">&#127937;</span>
+      <span class="arr-title">Arriv&eacute;es</span>
+      <span class="arr-count" id="arr-count">—</span>
+    </div>
+    <div class="arr-list" id="arr-list">
+      <div class="arr-empty">En attente<br>des premiers<br>finishers&hellip;</div>
+    </div>
+  </div>
+</div>
+
+<div class="sched">
+  <div class="sched-label"><div class="sl-title">Programme</div><div class="sl-sub">D&eacute;parts</div></div>
+  <div class="sched-cards" id="sched-cards">
+    <div style="color:var(--w3);font-family:var(--sans);font-size:11px;letter-spacing:2px;text-transform:uppercase;padding:0 8px">Chargement&hellip;</div>
+  </div>
+</div>
+
+
+<div id="confetti-layer"></div>
+
+<script>
+const C = {
+  SHEET_ID: "1ZVU8qFVhMkMAunN7oeI6pf9NmdEfQAlhJiKsFOlgSXE",
+  GID: { schedule: "1193961413" },
+  REFRESH_MS: 20_000,
+  ROTATE_MS:  20_000,
+};
+
+const SEGMENTS = [
+  {key:'run_1',        label:'Run 1',         start:'start_run_1',        end:'end_run_1',        type:'run' },
+  {key:'ski',          label:'SkiErg',         start:'start_ski',          end:'end_ski',          type:'stat'},
+  {key:'run_2',        label:'Run 2',          start:'start_run_2',        end:'end_run_2',        type:'run' },
+  {key:'sled_push',    label:'Sled Push',      start:'start_sled_push',    end:'end_sled_push',    type:'stat'},
+  {key:'run_3',        label:'Run 3',          start:'start_run_3',        end:'end_run_3',        type:'run' },
+  {key:'sled_pull',    label:'Sled Pull',      start:'start_sled_pull',    end:'end_sled_pull',    type:'stat'},
+  {key:'run_4',        label:'Run 4',          start:'start_run_4',        end:'end_run_4',        type:'run' },
+  {key:'burpees',      label:'Burpee Jumps',   start:'start_burpees',      end:'end_burpees',      type:'stat'},
+  {key:'run_5',        label:'Run 5',          start:'start_run_5',        end:'end_run_5',        type:'run' },
+  {key:'row',          label:'RowErg',         start:'start_row',          end:'end_row',          type:'stat'},
+  {key:'run_6',        label:'Run 6',          start:'start_run_6',        end:'end_run_6',        type:'run' },
+  {key:'farmer_carry', label:'Farmer Carry',   start:'start_farmer_carry', end:'end_farmer_carry', type:'stat'},
+  {key:'run_7',        label:'Run 7',          start:'start_run_7',        end:'end_run_7',        type:'run' },
+  {key:'lunges',       label:'Sandbag Lunges', start:'start_lunges',       end:'end_lunges',       type:'stat'},
+  {key:'run_8',        label:'Run 8',          start:'start_run_8',        end:'end_run_8',        type:'run' },
+  {key:'wall_ball',    label:'Wall Balls',     start:'start_wall_ball',    end:'end_wall_b',       type:'stat'},
+];
+
+const CAT_CLASS={
+  'Solo Open':'cat-solo-open','Solo Pro':'cat-solo-pro',
+  'Duo Open':'cat-duo-open','Duo Mixte':'cat-duo-mixte','Duo Pro':'cat-duo-pro',
+};
+
+/* ── CONFETTIS ── */
+const CFC=['#f5c030','#ffd860','#fff','#3ddc84','#7acce8','#f0a050'];
+function launchConfetti(){const l=document.getElementById('confetti-layer');l.innerHTML='';for(let i=0;i<70;i++){const p=document.createElement('div');p.className='cp';const sz=Math.random()*9+5,dur=Math.random()*2.5+2,del=Math.random()*1.8;p.style.cssText=`left:${Math.random()*100}%;width:${sz}px;height:${sz*(Math.random()>.5?1:.4)}px;background:${CFC[Math.floor(Math.random()*CFC.length)]};animation-duration:${dur}s;animation-delay:${del}s;border-radius:${Math.random()>.5?'50%':'2px'};`;l.appendChild(p);}setTimeout(()=>l.innerHTML='',5500);}
+let _prevL={};
+function checkLeaders(d){const cats=[...new Set(d.map(r=>r.categorie).filter(Boolean))];let ch=false;cats.forEach(c=>{const t=d.filter(r=>r.categorie===c&&r.nom1&&r.rank&&r.rank!=='FALSE').sort((a,b)=>(+a.rank||99)-(+b.rank||99))[0]?.nom1||null;if(_prevL[c]&&_prevL[c]!==t)ch=true;_prevL[c]=t;});if(ch)launchConfetti();}
+
+/* ── LOADER ── */
+function loadSheet(gid){return new Promise((res,rej)=>{const cb=`_gv${gid}x${Date.now()}`;const s=document.createElement('script');window[cb]=(resp)=>{delete window[cb];s.parentNode&&s.parentNode.removeChild(s);if(resp.status!=='ok'){rej(new Error(resp.errors?.[0]?.message||'Erreur'));return;}const cols=resp.table.cols.map(c=>c.label||c.id);const rows=(resp.table.rows||[]).map(row=>{const obj={};(row.c||[]).forEach((cell,i)=>{if(!cell||cell.v==null){obj[cols[i]]='';return;}if(typeof cell.v==='string'&&cell.v.startsWith('Date(')){obj[cols[i]]=cell.f||'';}else{obj[cols[i]]=String(cell.v);}});return obj;});res(rows);};s.onerror=()=>{delete window[cb];rej(new Error(`GID ${gid} inaccessible. Sheet partagé ?`));};s.src=`https://docs.google.com/spreadsheets/d/${C.SHEET_ID}/gviz/tq?tqx=out:json;responseHandler:${cb}&gid=${gid}&t=${Date.now()}`;document.head.appendChild(s);});}
+function loadCell(gid,r){return new Promise(res=>{const cb=`_cell${Date.now()}`;const s=document.createElement('script');window[cb]=(resp)=>{delete window[cb];s.parentNode&&s.parentNode.removeChild(s);try{res(resp.table.rows[0]?.c[0]?.v||'');}catch(e){res('');}};s.onerror=()=>{delete window[cb];res('');};s.src=`https://docs.google.com/spreadsheets/d/${C.SHEET_ID}/gviz/tq?tqx=out:json;responseHandler:${cb}&gid=${gid}&range=${r}&t=${Date.now()}`;document.head.appendChild(s);});}
+
+/* ── HELPERS ── */
+function parseTimeVal(str){if(!str)return null;str=String(str).trim();if(str.startsWith('Date(')){const m=str.match(/Date\(\d+,\d+,\d+,(\d+),(\d+),(\d+)\)/);if(m)return{h:+m[1],m:+m[2],s:+m[3]};}if(/[AP]M/i.test(str)){const isPM=/PM/i.test(str);const p=str.replace(/\s*[AP]M/i,'').split(':');let h=+p[0];if(isPM&&h!==12)h+=12;if(!isPM&&h===12)h=0;return{h,m:+p[1]||0,s:+p[2]||0};}const p=str.split(':');if(p.length>=2&&!isNaN(+p[0]))return{h:+p[0],m:+p[1]||0,s:+p[2]||0};return null;}
+function parseHHMM(str){const t=parseTimeVal(str);if(!t)return null;const d=new Date();d.setHours(t.h,t.m,t.s,0);return d;}
+function fmtHHMM(str){const t=parseTimeVal(str);if(!t)return'—';return`${String(t.h).padStart(2,'0')}:${String(t.m).padStart(2,'0')}`;}
+function fmtSec(sec){const s=Math.max(0,Math.round(sec));const m=Math.floor(s/60),r=s%60;return`${String(m).padStart(2,'0')}:${String(r).padStart(2,'0')}`;}
+function countdown(t){const d=Math.round((t-Date.now())/1000);if(d<=0)return null;const m=Math.floor(d/60),s=d%60;return m>0?`dans ${m}min`:`dans ${s}s`;}
+function fmtFinalTime(val){if(!val||val==='FALSE'||val==='false')return null;const t=parseTimeVal(val);if(!t)return null;if(t.h>0)return`${t.h}:${String(t.m).padStart(2,'0')}:${String(t.s).padStart(2,'0')}`;return`${t.m}:${String(t.s).padStart(2,'0')}`;}
+function athName(row){
+  // Gère prénom1 (avec accent) ET prenom1 (sans accent)
+  const p1=(row['prénom1']||row.prenom1||'').trim();
+  const p2=(row['prénom2']||row.prenom2||'').trim();
+  const n1=(row.nom1||'').trim();
+  const n2=(row.nom2||'').trim();
+  return{main:`${n1} ${p1}`.trim(),partner:n2?`${n2} ${p2}`.trim():''};
+}
+function rCls(v){const n=+v;return n===1?'p1':n===2?'p2':n===3?'p3':'px';}
+
+/* ── CATÉGORIES ── */
+const _prevRanks={};
+function renderAllCategories(data){
+  const grid=document.getElementById('cat-grid');
+  const ORDER=['Solo Open','Solo Pro','Duo Open','Duo Mixte','Duo Pro'];
+  const cats=[...new Set(data.map(r=>r.categorie).filter(Boolean))];
+  cats.sort((a,b)=>{const ia=ORDER.indexOf(a),ib=ORDER.indexOf(b);return(ia<0?99:ia)-(ib<0?99:ib);});
+  if(!cats.length){grid.innerHTML='<div class="cat-empty">Aucune donnée</div>';return;}
+  cats.forEach(cat=>{
+    const slug=cat.toLowerCase().replace(/\s+/g,'-');
+    const pid=`panel-${slug}`, tid=`tbody-${slug}`;
+    let panel=document.getElementById(pid);
+    if(!panel){
+      panel=document.createElement('div');
+      panel.id=pid;
+      panel.className=`cat-panel ${CAT_CLASS[cat]||'cat-default'}`;
+      panel.innerHTML=`<div class="cat-ph"><div class="cat-ph-bar"></div><span class="cat-ph-name">${cat}</span><span class="cat-ph-count" id="count-${slug}">—</span></div><div class="cat-thead"><span></span><span>Athl&egrave;te(s)</span><span style="text-align:center">Heat</span><span style="text-align:right">Temps</span></div><div class="cat-tbody" id="${tid}"></div>`;
+      grid.appendChild(panel);
+    }
+    const tbody=document.getElementById(tid), countEl=document.getElementById(`count-${slug}`);
+    const rows=data.filter(r=>r.categorie===cat&&r.nom1).sort((a,b)=>{
+      const ra=+a.rank||999,rb=+b.rank||999;if(ra!==rb)return ra-rb;
+      const ta=parseTimeVal(a.final_time),tb2=parseTimeVal(b.final_time);
+      if(ta&&tb2)return(ta.h*3600+ta.m*60+ta.s)-(tb2.h*3600+tb2.m*60+tb2.s);return 0;
+    });
+    if(countEl)countEl.textContent=`${rows.length} athlète${rows.length>1?'s':''}`;
+    if(!rows.length){tbody.innerHTML='<div class="cat-empty">En attente…</div>';return;}
+    tbody.querySelectorAll('.cat-row').forEach(row=>{
+      const ne=row.querySelector('.cnom');if(!ne)return;
+      const nom=ne.textContent.trim();
+      const ath=rows.find(a=>`${(a.nom1||'').trim()} ${(a['prénom1']||'').trim()}`.trim()===nom);
+      if(!ath)return;
+      const nr=+(ath.rank||999),or=_prevRanks[`${cat}_${nom}`];
+      if(or==null||or===nr)return;
+      const delta=or-nr;row.classList.remove('rank-up','rank-down');void row.offsetWidth;row.classList.add(delta>0?'rank-up':'rank-down');row.style.position='relative';
+      const b=document.createElement('div');b.className=`rdelta ${delta>0?'up':'down'}`;b.textContent=delta>0?`↑${delta}`:`↓${Math.abs(delta)}`;row.appendChild(b);
+      setTimeout(()=>{row.classList.remove('rank-up','rank-down');b.remove();},3000);
+    });
+    rows.forEach(a=>{if(a.nom1)_prevRanks[`${cat}_${`${(a.nom1||'').trim()} ${(a['prénom1']||'').trim()}`.trim()}`]=+(a.rank||999);});
+    tbody.innerHTML=rows.map(a=>{
+      const rank=a.rank&&a.rank!=='FALSE'?+a.rank:'—';
+      const {main,partner}=athName(a);const t=fmtFinalTime(a.final_time);
+      return`<div class="cat-row ${rCls(rank)}" style="position:relative"><div class="crn">${rank}</div><div class="can"><div class="cnom">${main}</div>${partner?`<div class="cnom2">${partner}</div>`:''}</div><div style="text-align:center"><span class="chtag">H${a.heat||'?'}</span></div><div class="ctime">${t?`<div class="ctime-val">${t}</div>`:'<div class="ctime-none">En course…</div>'}</div></div>`;
+    }).join('');
+  });
+}
+
+/* ── ARRIVÉES ── */
+let _prevArr=new Set();
+function renderArrivals(data){
+  const el=document.getElementById('arr-list'),cnt=document.getElementById('arr-count');if(!el)return;
+  const fin=data.filter(r=>r.nom1&&(r.end_wall_b||(r.final_time&&r.final_time!=='FALSE'&&r.final_time!=='false'))).map(r=>{const at=parseHHMM(r.end_wall_b);return{...r,arrSec:at?at.getHours()*3600+at.getMinutes()*60+at.getSeconds():0};}).sort((a,b)=>b.arrSec-a.arrSec);
+  cnt.textContent=fin.length?`${fin.length} finisher${fin.length>1?'s':''}`: '—';
+  if(!fin.length){el.innerHTML='<div class="arr-empty">En attente<br>des premiers<br>finishers&hellip;</div>';return;}
+  const nk=new Set(fin.map(r=>r.nom1)),added=[...nk].filter(k=>!_prevArr.has(k));_prevArr=nk;
+  el.innerHTML=fin.map(r=>{
+    const rank=r.rank&&r.rank!=='FALSE'?+r.rank:'—';const ft=fmtFinalTime(r.final_time);
+    const n1=(r.nom1||'').trim(),p1=(r['prénom1']||r.prenom1||'').trim(),n2=(r.nom2||'').trim(),p2=(r['prénom2']||r.prenom2||'').trim();
+    const partner=n2?`${n2} ${p2}`.trim():'';const isNew=added.includes(r.nom1)?' new-arr':'';
+    return`<div class="arr-row ${rCls(rank)}${isNew}"><div class="arr-rank">${rank}</div><div class="arr-info"><div class="arr-nom">${n1} ${p1}</div>${partner?`<div class="arr-nom2">${partner}</div>`:''}<div class="arr-meta">${r.categorie||''}</div></div><div class="arr-time"><div class="arr-final">${ft||'—'}</div><div class="arr-heat">H${r.heat||'?'}${r.end_wall_b?' · '+fmtHHMM(r.end_wall_b):''}</div></div></div>`;
+  }).join('');
+}
+
+/* ── LIVE BANNER ── */
+let _sData=[];
+function getHeatStatus(row){const now=new Date(),rs=parseHHMM(row.start_run_1);if(!rs||rs>now)return null;const re=parseHHMM(row.end_wall_b);if(re&&re<=now)return{status:'done'};let cs=null,cc=0;for(const seg of SEGMENTS){const ss=parseHHMM(row[seg.start]),se=parseHHMM(row[seg.end]);if(se&&se<=now){cc++;continue;}if(ss&&ss<=now){cs=seg;break;}}const el=(now-rs)/1000,total=re?(re-rs)/1000:105*60;return{status:'racing',currentSeg:cs,completedCount:cc,elapsed:el,total};}
+function refreshLiveBanner(){
+  const el=document.getElementById('lb-main');if(!el)return;
+  const active=_sData.filter(r=>r.nom1&&r.start_run_1).map(r=>{const st=getHeatStatus(r);return st&&st.status==='racing'?{row:r,st}:null;}).filter(Boolean);
+  if(!active.length){el.style.display='none';return;}
+  const {row,st}=active[0];
+  const n1=(row.nom1||'').trim(),p1=(row['prénom1']||row.prenom1||'').trim(),n2=(row.nom2||'').trim(),p2=(row['prénom2']||row.prenom2||'').trim();
+  const names=n2?`${n1} ${p1} / ${n2} ${p2}`:`${n1} ${p1}`;
+  const segLabel=st.currentSeg?`<span class="lb-seg ${st.currentSeg.type==='run'?'run-seg':'stat-seg'}">${st.currentSeg.label}</span>`:'<span class="lb-seg">En course…</span>';
+  const dots=SEGMENTS.map((seg,i)=>{const done=i<st.completedCount,act=st.currentSeg&&seg.key===st.currentSeg.key;return`<div class="pdot ${seg.type}${done?' done':''}${act?' active':''}"></div>`;}).join('');
+  const prog=Math.min(100,(st.elapsed/st.total)*100).toFixed(1);
+  el.style.display='flex';
+  el.innerHTML=`<div class="lb-left"><div class="lb-status"><div class="lb-sdot"></div>En course</div><div class="lb-heat">H${row.heat}</div></div><div class="lb-mid"><div class="lb-names">${names}</div>${segLabel}<div class="prog-track">${dots}</div></div><div class="lb-right"><div class="lb-elapsed">&#201;coul&#233;</div><div class="lb-chrono">${fmtSec(st.elapsed)}</div><div class="lb-bar-wrap"><div class="lb-bar-fill" style="width:${prog}%"></div></div></div>`;
+}
+// refreshLiveBanner supprimé (lb-main n'existe plus)
+
+/* ── SCHEDULE ── */
+let schedHeats=[];
+function buildSchedule(data){
+  const seen=new Set(),map={};
+  data.forEach(row=>{
+    const h=String(row.heat||'').trim();
+    if(!h||isNaN(+h)||seen.has(h))return;
+    seen.add(h);
+    const n1=(row.nom1||'').trim(),p1=(row['prénom1']||row.prenom1||'').trim();
+    const n2=(row.nom2||'').trim(),p2=(row['prénom2']||row.prenom2||'').trim();
+    const ath=n2?`${n1} ${p1} / ${n2} ${p2}`.trim():`${n1} ${p1}`.trim();
+    map[h]={heatNum:+h,heat:`H${h}`,warmStr:row.start_warm_up,startStr:row.start_run_1,
+      warmTime:parseHHMM(row.start_warm_up),startTime:parseHHMM(row.start_run_1),
+      athlete:ath||'TBD',cat:row.categorie||'',row};
+  });
+  // Tri par heure de départ (start_run_1), puis par numéro de heat si pas d'heure
+  schedHeats=Object.values(map).sort((a,b)=>{
+    if(a.startTime&&b.startTime) return a.startTime-b.startTime;
+    if(a.startTime) return -1;
+    if(b.startTime) return 1;
+    return a.heatNum-b.heatNum;
+  });
+  renderSchedule();
+}
+function renderSchedule(){
+  const now=new Date(),c=document.getElementById('sched-cards');
+  // Garder seulement les heats qui n'ont pas encore démarré
+  const upcoming=schedHeats.filter(h=>!h.startTime||h.startTime>now);
+  if(!upcoming.length){
+    c.innerHTML='<div style="color:var(--w3);font-family:var(--sans);font-size:11px;letter-spacing:2px;text-transform:uppercase;padding:0 12px">Tous les départs effectués</div>';
+    return;
+  }
+  const ni=0; // le premier = prochain
+  c.innerHTML=upcoming.map((h,i)=>{
+    const isN=i===0;
+    let cc='ecard',bc='ecard-badge',bt;
+    if(isN){cc+=' next-card';bc+=' badge-next';bt=countdown(h.startTime)||'PROCHAIN';}
+    else{bc+=' badge-time';bt=countdown(h.startTime)||fmtHHMM(h.startStr);}
+    const warmLine=h.warmStr?`<div style="font-family:var(--mono);font-size:clamp(9px,.85vw,11px);color:var(--w3);margin-top:1px">W-UP&nbsp; ${fmtHHMM(h.warmStr)}</div>`:'';
+    const startLine=h.startStr?`<div style="font-family:var(--mono);font-size:clamp(13px,1.3vw,17px);font-weight:600;color:var(--gold2)">${fmtHHMM(h.startStr)}</div>`:'';
+    const nameParts=h.athlete.split(' / ');
+    const nameHTML=nameParts.map(n=>`<div style="font-family:var(--sans);font-size:clamp(10px,1vw,13px);font-weight:700;color:var(--w);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${n.trim()}</div>`).join('');
+    return`<div class="${cc}">
+      <div class="ecard-top">
+        <div style="flex:1;min-width:0;overflow:hidden">${nameHTML}<div style="font-family:var(--sans);font-size:clamp(8px,.7vw,10px);color:var(--w3);letter-spacing:.1em;margin-top:1px">${h.heat} &middot; ${h.cat||''}</div></div>
+        <span class="${bc}" style="flex-shrink:0;margin-left:4px">${bt}</span>
+      </div>
+      ${warmLine}${startLine}
+    </div>`;
+  }).join('');
+  // Scroll auto vers le premier
+  setTimeout(()=>{const fc=c.querySelector('.ecard');if(fc)fc.scrollIntoView({behavior:'smooth',block:'nearest',inline:'start'});},100);
+}
+setInterval(renderSchedule,30_000);
+
+/* ── POPUP DÉPART ── */
+const _depS=new Set();let _depT=null;
+
+const COUNTDOWN_AUDIO_URL = 'https://hyflender.github.io/tv-screen/10%20Seconds%20Timer.mp3';
+let _depAudio = null;
+
+// Précharger le son dès le premier clic pour éviter tout délai de buffering
+function _initAudio(){
+  if(_depAudio)return;
+  _depAudio = new Audio(COUNTDOWN_AUDIO_URL);
+  _depAudio.preload = 'auto';
+  _depAudio.load();
+}
+document.addEventListener('click', _initAudio, {once:true});
+
+function _punchNum(el){
+  el.classList.remove('num-punch');
+  void el.offsetWidth; // force reflow
+  el.classList.add('num-punch');
+}
+function _playCountdownSound() {
+  try {
+    if(!_depAudio) _depAudio = new Audio(COUNTDOWN_AUDIO_URL);
+    _depAudio.currentTime = 0;
+    _depAudio.play().catch(e => console.warn('Audio:', e));
+  } catch(e) { console.warn('Audio init:', e); }
+}
+
+
+function hideDep(){
+  document.getElementById('dep-overlay').classList.remove('show');
+  if(_depT){clearInterval(_depT);_depT=null;}
+  if(_depAudio){_depAudio.pause();_depAudio=null;}
+}
+function showDep(h,sl){
+  const r=h.row;
+  const {main,partner}=athName(r);
+  // Mettre à jour le nouveau HTML
+  document.getElementById('dep-heat-badge2').textContent=h.heat;
+  document.getElementById('dep-cat2').textContent=(r.categorie||'')+(r.genre?' · '+r.genre:'');
+  const namesEl=document.getElementById('dep-names2');
+  if(partner){
+    namesEl.innerHTML=`<span class="dep-name2">${main}</span><span class="dep-name2">${partner}</span>`;
+  } else {
+    namesEl.innerHTML=`<span class="dep-name2">${main}</span>`;
+  }
+  const cd=document.getElementById('dep-countdown');
+  const goEl=document.getElementById('dep-go');
+  cd.style.display='block';goEl.style.display='none';
+  cd.className=''; // reset color classes
+  document.getElementById('dep-unit').style.display='';
+  let secs=Math.max(0,sl),total=Math.max(secs,1);
+  cd.textContent=secs;
+  document.getElementById('dep-bar').style.transition='none';
+  document.getElementById('dep-bar').style.width=((total-secs)/total*100)+'%';
+  document.getElementById('dep-overlay').classList.add('show');
+  if(secs<=11)_playCountdownSound(); // déjà dans les 11s → son immédiat
+  if(_depT)clearInterval(_depT);
+  _depT=setInterval(()=>{
+    secs--;
+    if(secs<0){clearInterval(_depT);_depT=null;return;}
+    cd.textContent=secs;
+    document.getElementById('dep-bar').style.transition='width 1s linear';
+    document.getElementById('dep-bar').style.width=((total-secs)/total*100)+'%';
+    // son géré par le bloc ci-dessous
+    // Couleur progressifs
+    cd.className='';
+    if(secs===3){cd.classList.add('c3');_punchNum(cd);}
+    if(secs===2){cd.classList.add('c2');_punchNum(cd);}
+    if(secs===1){cd.classList.add('c1');_punchNum(cd);}
+    if(secs===11)_playCountdownSound(); // déclencher 1s tôt
+    if(secs===0){
+      cd.style.display='none';
+      document.getElementById('dep-unit').style.display='none';
+      const overlay=document.getElementById('dep-overlay');
+      const card=document.getElementById('dep-card');
+      // Flash écran
+      overlay.classList.add('go-flash');
+      // Ondes de choc
+      ['','shockwave2'].forEach(cls=>{
+        const w=document.createElement('div');
+        w.className='shockwave '+cls;
+        card.appendChild(w);
+        setTimeout(()=>w.remove(),1200);
+      });
+      // GO explosif
+      goEl.style.display='block';
+      goEl.className='blasting';
+      document.getElementById('dep-bar').style.width='100%';
+      launchConfetti();
+      setTimeout(()=>{overlay.classList.remove('go-flash');},800);
+      setTimeout(()=>hideDep(),3200);
+    }
+  },1000);
+}
+function checkDepartures(){if(!schedHeats.length)return;const now=new Date();for(const h of schedHeats){if(!h.startTime||_depS.has(h.heat))continue;const secs=Math.round((h.startTime-now)/1000);if(secs<=60&&secs>=0){_depS.add(h.heat);showDep(h,secs);break;}}}
+
+
+/* ── EN COURS ── */
+function renderEnCours(){
+  const grid=document.getElementById('racing-grid'),cnt=document.getElementById('racing-cnt');
+  if(!_sData.length){
+    grid.innerHTML='<div class="racing-empty"><div class="racing-empty-icon">&#9203;</div><div class="racing-empty-txt">Chargement&hellip;</div></div>';
+    return;
+  }
+  const now=new Date();
+  // Tous les athlètes pas encore arrivés (pas de end_wall_b ou dans le futur)
+  const athletes=_sData.filter(r=>{
+    if(!r.nom1)return false;
+    const re=parseHHMM(r.end_wall_b);
+    return !re||re>now;  // pas encore fini
+  }).sort((a,b)=>(+a.heat||99)-(+b.heat||99));
+
+  if(cnt)cnt.textContent=athletes.length?`${athletes.length} athlète${athletes.length>1?'s':''}`:'\u2014';
+  if(!athletes.length){
+    grid.innerHTML='<div class="racing-empty"><div class="racing-empty-icon">&#127937;</div><div class="racing-empty-txt">Tous les athl&egrave;tes<br>sont arriv&eacute;s !</div></div>';
+    return;
+  }
+
+  grid.innerHTML=athletes.map(row=>{
+    const rs=parseHHMM(row.start_run_1);
+    const hasStarted=rs&&rs<=now;
+    const st=hasStarted?getHeatStatus(row):null;
+    const {main,partner}=athName(row);
+    const isSolo=(row.categorie||'').includes('Solo');
+    const catClr=isSolo?'#7acce8':'#f0a050',catBg=isSolo?'rgba(122,204,232,.12)':'rgba(240,160,80,.12)';
+    const heatBadge=`<span class="chtag" style="font-size:var(--fs-label)">H${row.heat||'?'}</span>`;
+    const catBadge=`<span style="font-family:var(--sans);font-size:var(--fs-label);font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:2px 6px;border-radius:1px;color:${catClr};background:${catBg}">${row.categorie||''}${row.genre?' \u00b7 '+row.genre:''}</span>`;
+
+    if(!hasStarted){
+      // En attente : carte sobre avec heure de départ prévue
+      const startStr=row.start_run_1?fmtHHMM(row.start_run_1):'—';
+      return`<div class="rc-card" style="border-left-color:rgba(255,255,255,.15);opacity:.75">
+        <div class="rc-top"><div class="rc-names"><div class="rc-name">${main}</div>${partner?`<div class="rc-name2">/ ${partner}</div>`:''}</div><div class="rc-badges">${heatBadge}${catBadge}</div></div>
+        <div class="rc-div"></div>
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <span style="font-family:var(--sans);font-size:var(--fs-label);font-weight:600;letter-spacing:.25em;text-transform:uppercase;color:var(--w3)">En attente</span>
+          <span style="font-family:var(--mono);font-size:var(--fs-time);color:var(--w2)">${startStr}</span>
+        </div>
+      </div>`;
+    }
+
+    // En course : carte complète avec progression
+    const pct=Math.round(st.completedCount/SEGMENTS.length*100);
+    const segLabel=st.currentSeg?st.currentSeg.label:'Finition\u2026';
+    const segCls=st.currentSeg?(st.currentSeg.type==='run'?'run-seg':'stat-seg'):'';
+    const dots=SEGMENTS.map((seg,i)=>{const done=i<st.completedCount,act=st.currentSeg&&seg.key===st.currentSeg.key;return`<div class="pdot ${seg.type}${done?' done':''}${act?' active':''}"></div>`;}).join('');
+    return`<div class="rc-card">
+      <div class="rc-top"><div class="rc-names"><div class="rc-name">${main}</div>${partner?`<div class="rc-name2">/ ${partner}</div>`:''}</div><div class="rc-badges">${heatBadge}${catBadge}</div></div>
+      <div class="rc-div"></div>
+      <div class="rc-seg-row"><span class="rc-seg-lbl ${segCls}">${segLabel}</span><div class="rc-dots">${dots}</div></div>
+      <div class="rc-bottom"><div class="rc-elapsed">&#9201; ${fmtSec(st.elapsed)}</div><div class="rc-pct">${pct}% compl&eacute;t&eacute;<span>${st.completedCount}/16 segments</span></div></div>
+    </div>`;
+  }).join('');
+}
+setInterval(()=>{
+  renderEnCours();
+  checkDepartures();
+  const _g=document.getElementById('racing-grid');
+  if(_g)_g.scrollTop=Math.round(_SC.encours.pos);
+},1000);
+
+/* ── AUTO-SCROLL TOUTES VUES (un seul RAF loop) ── */
+const _SC={
+  encours:{elId:'racing-grid',pos:0,dir:1,paused:false},
+  solo:   {elId:'v-solo',     pos:0,dir:1,paused:false},
+  duo:    {elId:'v-duo',      pos:0,dir:1,paused:false},
+};
+function _allScroll(){
+  ['encours','solo','duo'].forEach(vId=>{
+    const s=_SC[vId];
+    if(s.paused)return;
+    const view=document.getElementById('v-'+vId);
+    if(!view?.classList.contains('on'))return;
+    const el=document.getElementById(s.elId);if(!el)return;
+    const max=el.scrollHeight-el.clientHeight;if(max<=10)return;
+    s.pos+=0.6*s.dir;
+    if(s.pos>=max){s.pos=max;s.dir=-1;s.paused=true;setTimeout(()=>{s.paused=false;},1800);}
+    if(s.pos<=0&&s.dir===-1){s.pos=0;s.dir=1;s.paused=true;setTimeout(()=>{s.paused=false;},1800);}
+    el.scrollTop=Math.round(s.pos);
+  });
+  requestAnimationFrame(_allScroll);
+}
+requestAnimationFrame(_allScroll);
+
+/* ── CATÉGORIES PAR GENRE (Solo & Duo tabs) ── */
+const GENRE_ORDER=['Homme','Femme','Mixte'];
+function renderCatWithGender(data,gridId){
+  const grid=document.getElementById(gridId);if(!grid)return;
+  const CAT_ORDER=['Solo Open','Solo Pro','Duo Open','Duo Mixte','Duo Pro'];
+  const seen=new Set();const combos=[];
+  data.forEach(r=>{
+    if(!r.nom1||!r.categorie)return;
+    const k=`${r.categorie}|||${r.genre||''}`;
+    if(!seen.has(k)){seen.add(k);combos.push({cat:r.categorie,genre:r.genre||''});}
+  });
+  combos.sort((a,b)=>{
+    const ia=CAT_ORDER.indexOf(a.cat),ib=CAT_ORDER.indexOf(b.cat);
+    const cc=(ia<0?99:ia)-(ib<0?99:ib);if(cc!==0)return cc;
+    return(GENRE_ORDER.indexOf(a.genre)<0?99:GENRE_ORDER.indexOf(a.genre))-(GENRE_ORDER.indexOf(b.genre)<0?99:GENRE_ORDER.indexOf(b.genre));
+  });
+  if(!combos.length){grid.innerHTML='<div class="cat-empty">Aucune donn\u00e9e</div>';return;}
+  combos.forEach(({cat,genre})=>{
+    const slug=`${cat}-${genre}`.toLowerCase().replace(/[^a-z0-9]/g,'-').replace(/-+/g,'-');
+    const pid=`panel-${slug}`,tid=`tbody-${slug}`;
+    let panel=document.getElementById(pid);
+    if(!panel){
+      const label=genre?`${cat} \u2014 ${genre}s`:cat;
+      const cls=CAT_CLASS[cat]||'cat-default';
+      panel=document.createElement('div');panel.id=pid;panel.className=`cat-panel ${cls}`;
+      panel.innerHTML=`<div class="cat-ph"><div class="cat-ph-bar"></div><span class="cat-ph-name">${label}</span><span class="cat-ph-count" id="count-${slug}">\u2014</span></div><div class="cat-thead"><span></span><span>Athl\u00e8te(s)</span><span style="text-align:center">Heat</span><span style="text-align:right">Temps</span></div><div class="cat-tbody" id="${tid}"></div>`;
+      grid.appendChild(panel);
+    }
+    const tbody=document.getElementById(tid),countEl=document.getElementById(`count-${slug}`);
+    const rows=data.filter(r=>r.categorie===cat&&r.genre===genre&&r.nom1).sort((a,b)=>{
+      const ra=+a.rank||999,rb=+b.rank||999;if(ra!==rb)return ra-rb;
+      const ta=parseTimeVal(a.final_time),tb2=parseTimeVal(b.final_time);
+      if(ta&&tb2)return(ta.h*3600+ta.m*60+ta.s)-(tb2.h*3600+tb2.m*60+tb2.s);
+      return(+a.heat||99)-(+b.heat||99);
+    });
+    if(countEl)countEl.textContent=`${rows.length} athlète${rows.length>1?'s':''}`;
+    if(!rows.length){tbody.innerHTML='<div class="cat-empty">En attente…</div>';return;}
+    const isDuoCat=cat.includes('Duo');
+    tbody.innerHTML=rows.map((a,i)=>{
+      const subRank=i+1;const t=fmtFinalTime(a.final_time);
+      const n1=(a.nom1||'').trim(),p1=(a['prénom1']||a.prenom1||'').trim();
+      const n2=(a.nom2||'').trim(),p2=(a['prénom2']||a.prenom2||'').trim();
+      let nameHTML;
+      if(isDuoCat){
+        // Duo : les 2 athlètes au même poids visuel
+        const a1=`${n1} ${p1}`.trim(),a2=`${n2} ${p2}`.trim();
+        nameHTML=`<div class="cnom" style="font-size:calc(var(--fs-name)*.88)">${a1}</div>${a2?`<div class="cnom" style="font-size:calc(var(--fs-name)*.88);color:var(--w2);font-weight:600">${a2}</div>`:''}`;
+      } else {
+        // Solo : NOM en gras, prénom en italique léger
+        nameHTML=`<div class="cnom"><span style="font-weight:800;letter-spacing:.06em">${n1}</span>&thinsp;<span style="font-weight:300;font-style:italic;opacity:.8;font-size:.9em">${p1}</span></div>`;
+      }
+      return`<div class="cat-row ${rCls(subRank)}"><div class="crn">${subRank}</div><div class="can">${nameHTML}</div><div style="text-align:center"><span class="chtag">H${a.heat||'?'}</span></div><div class="ctime">${t?`<div class="ctime-val">${t}</div>`:'<div class="ctime-none">En course…</div>'}</div></div>`;
+    }).join('');
+  });
+}
+
+/* ── NAVIGATION & ROTATION ── */
+const VIEWS=['encours','solo','duo'];let vi=0,rot=null;
+function go(id,manual=false){
+  if(manual){clearTimeout(rot);vi=VIEWS.indexOf(id);}
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('on'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
+  document.getElementById(`v-${id}`).classList.add('on');
+  document.querySelector(`[data-v="${id}"]`).classList.add('on');
+  if(manual)schedRot();
+}
+function schedRot(){clearTimeout(rot);rot=setTimeout(()=>{vi=(vi+1)%VIEWS.length;go(VIEWS[vi]);schedRot();},C.ROTATE_MS);}
+
+/* ── LOAD ALL ── */
+async function loadAll(){
+  try{
+    const raw=await loadSheet(C.GID.schedule);
+    const data=raw.filter(r=>r.heat&&!isNaN(+r.heat)&&+r.heat>0&&+r.heat<100&&r.nom1);
+    _sData=data;
+    // Vider les grids avant rebuild pour éviter les données obsolètes
+    const sg=document.getElementById('solo-grid'),dg=document.getElementById('duo-grid');
+    if(sg)sg.innerHTML='';
+    if(dg)dg.innerHTML='';
+    renderCatWithGender(data.filter(r=>r.categorie&&r.categorie.includes('Solo')),'solo-grid');
+    renderCatWithGender(data.filter(r=>r.categorie&&r.categorie.includes('Duo')), 'duo-grid');
+    renderArrivals(data);
+    buildSchedule(raw.filter(r=>r.heat&&!isNaN(+r.heat)&&+r.heat>0&&+r.heat<100));
+    checkLeaders(data);
+    // Timestamp visible dans la console
+    console.log('[HYROX] Actualisé:', new Date().toLocaleTimeString('fr-FR'), '—', data.length, 'athlètes');
+    // Badge de refresh dans le header
+    const badge=document.querySelector('.live-badge');
+    if(badge){badge.style.borderColor='var(--live)';setTimeout(()=>badge.style.borderColor='',800);}
+  }catch(e){
+    console.error('[HYROX] Erreur loadAll:', e);
+    document.getElementById('racing-grid').innerHTML=`<div class="errmsg">&#9888; ${e.message}</div>`;
+  }
+}
+
+/* ── CLOCK + THEME ── */
+let rts=Date.now();
+(function tick(){const p=Math.max(0,100-(Date.now()-rts)/C.REFRESH_MS*100);document.getElementById('pfill').style.width=p+'%';requestAnimationFrame(tick);})();
+function updateClock(){document.getElementById('clock').textContent=new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit',second:'2-digit'});}
+function toggleTheme(){const l=document.body.classList.toggle('light');document.getElementById('theme-btn').textContent=l?'☾':'☀';}
+updateClock();setInterval(updateClock,1000);
+
+/* ── INIT ── */
+loadAll();rts=Date.now();
+setInterval(()=>{loadAll();rts=Date.now();},C.REFRESH_MS);
+schedRot();
+</script>
+
+<div id="dep-overlay">
+  <div id="dep-card">
+    <button id="dep-close" onclick="hideDep()">&#10005;</button>
+    <div id="dep-top-bar">
+      <div id="dep-heat-line">
+        <span id="dep-heat-badge2">H?</span>
+        <span id="dep-cat2"></span>
+      </div>
+      <div id="dep-names2"></div>
+    </div>
+    <div id="dep-center">
+      <div id="dep-label2">D&Eacute;PART IMMINENT</div>
+      <span id="dep-countdown">60</span>
+      <div id="dep-go">GO !</div>
+      <div id="dep-unit">secondes</div>
+    </div>
+    <div id="dep-bar-wrap"><div id="dep-bar"></div></div>
+  </div>
+</div>
+
+</body>
+</html>
