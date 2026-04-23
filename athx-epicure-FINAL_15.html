@@ -1,0 +1,1137 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ATHX – Epicure Social Club</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;1,300;1,400&family=Josefin+Sans:wght@300;400;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg:       #0a1307;
+      --surface:  #131f0e;
+      --panel:    #182812;
+      --row:      rgba(255,255,255,0.05);
+      --border:   rgba(255,255,255,0.12);
+      --gold:     #f5c030;
+      --gold2:    #ffd860;
+      --gold-bg:  rgba(245,192,48,0.15);
+      --gold-bd:  rgba(245,192,48,0.35);
+      --w:        #ffffff;
+      --w2:       rgba(255,255,255,0.80);
+      --w3:       rgba(255,255,255,0.45);
+      --g1:       #f5c030;
+      --g2:       #d8dde2;
+      --g3:       #d08858;
+      --live:     #3ddc84;
+      --live-bg:  rgba(61,220,132,0.15);
+      --blue:     #7acce8;
+      --pink:     #e896b0;
+      --serif:    'Cormorant Garamond', Georgia, serif;
+      --sans:     'Josefin Sans', sans-serif;
+      --mono:     'DM Mono', monospace;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { background:var(--bg); color:var(--w); font-family:var(--sans); width:100vw; height:100vh; overflow:hidden; display:flex; flex-direction:column; }
+
+    /* ── HEADER ── */
+    .hdr {
+      display:flex; align-items:center; justify-content:space-between;
+      padding:0 52px; height:82px; flex-shrink:0;
+      background:var(--surface);
+      border-bottom:1px solid var(--gold-bd);
+    }
+    .brand-main { font-family:var(--serif); font-style:italic; font-size:56px; font-weight:400; letter-spacing:8px; color:var(--gold2); line-height:1; }
+    .brand-sub  { font-family:var(--sans); font-size:10px; font-weight:300; letter-spacing:5px; text-transform:uppercase; color:var(--w3); margin-top:3px; }
+    .hdr-mid { text-align:center; }
+    .edition { font-family:var(--sans); font-size:11px; font-weight:600; letter-spacing:4px; text-transform:uppercase; color:var(--gold); padding:4px 16px; border:1px solid var(--gold-bd); border-radius:1px; }
+    .epicure  { font-family:var(--serif); font-style:italic; font-size:16px; color:var(--w2); margin-top:5px; }
+    .hdr-right { display:flex; align-items:center; gap:18px; }
+    .live-badge { display:flex; align-items:center; gap:8px; padding:7px 16px; border:1px solid rgba(61,220,132,.4); border-radius:2px; font-family:var(--sans); font-size:12px; font-weight:700; letter-spacing:3px; color:var(--live); }
+    .live-dot { width:8px; height:8px; border-radius:50%; background:var(--live); animation:blink 1.4s ease-in-out infinite; }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.15} }
+    .clock { font-family:var(--mono); font-size:26px; font-weight:500; color:var(--w2); letter-spacing:2px; }
+
+    /* ── NAV ── */
+    .nav { display:flex; height:42px; flex-shrink:0; background:var(--surface); border-bottom:1px solid var(--border); }
+    .tab { flex:1; display:flex; align-items:center; justify-content:center; gap:7px; font-family:var(--sans); font-size:12px; font-weight:600; letter-spacing:3px; text-transform:uppercase; color:var(--w3); cursor:pointer; border-bottom:2px solid transparent; transition:all .25s; user-select:none; }
+    .tab:hover { color:var(--w2); background:rgba(255,255,255,.03); }
+    .tab.on { color:var(--gold); border-bottom-color:var(--gold); background:var(--gold-bg); }
+
+    /* ── SCOREBOARD CONTENT ── */
+    .content { flex:1; min-height:0; padding:20px 52px 14px; display:flex; flex-direction:column; overflow:hidden; }
+    .view { display:none; flex-direction:column; height:100%; }
+    .view.on { display:flex; animation:fadein .4s ease; }
+    @keyframes fadein { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:none} }
+
+    .vtitle { display:flex; align-items:baseline; gap:12px; padding-bottom:10px; margin-bottom:14px; border-bottom:1px solid var(--border); flex-shrink:0; }
+    .vtitle h2 { font-family:var(--serif); font-style:italic; font-size:30px; font-weight:400; letter-spacing:2px; color:var(--w); }
+    .vtitle span { font-family:var(--sans); font-size:11px; font-weight:300; letter-spacing:3px; text-transform:uppercase; color:var(--w3); }
+
+    .cols { display:grid; grid-template-columns:1fr 1fr; gap:24px; flex:1; overflow:hidden; min-height:0; }
+    .col { display:flex; flex-direction:column; overflow:hidden; }
+
+    .glabel { display:inline-flex; align-items:center; gap:5px; font-family:var(--sans); font-size:11px; font-weight:600; letter-spacing:4px; text-transform:uppercase; padding:4px 12px; border:1px solid; border-radius:1px; margin-bottom:8px; width:fit-content; flex-shrink:0; }
+    .glabel.m { color:var(--blue); border-color:rgba(122,204,232,.3); background:rgba(122,204,232,.08); }
+    .glabel.f { color:var(--pink); border-color:rgba(232,150,176,.3); background:rgba(232,150,176,.08); }
+
+    .thead { display:grid; padding:7px 14px; font-family:var(--sans); font-size:11px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:var(--gold); opacity:.8; border-bottom:1px solid var(--border); flex-shrink:0; }
+    .tbody { overflow-y:auto; flex:1; min-height:0; }
+    .tbody::-webkit-scrollbar { width:2px; }
+    .tbody::-webkit-scrollbar-thumb { background:var(--gold-bd); border-radius:1px; }
+
+    /* column templates */
+    .cg { grid-template-columns:44px 1fr 52px 52px 52px 66px; gap:0 6px; }
+    .cs { grid-template-columns:44px 1fr 46px 68px 68px 68px 76px 52px; gap:0 6px; }
+    .ce { grid-template-columns:44px 1fr 46px 1fr 52px; gap:0 6px; }
+    .cm { grid-template-columns:44px 1fr 46px 1fr 68px; gap:0 6px; }
+
+    /* ── ROWS ── */
+    .row { display:grid; align-items:center; padding:11px 14px; margin-bottom:2px; border-left:3px solid transparent; position:relative; }
+    .row.p1 { background:rgba(245,192,48,.10); border-left-color:var(--g1); }
+    .row.p2 { background:rgba(216,221,226,.06); border-left-color:var(--g2); }
+    .row.p3 { background:rgba(208,136,88,.07);  border-left-color:var(--g3); }
+    .row.px { background:var(--row); }
+
+    .rn { font-family:var(--serif); font-style:italic; font-size:32px; font-weight:400; text-align:center; line-height:1; }
+    .p1 .rn { color:var(--g1); }
+    .p2 .rn { color:var(--g2); }
+    .p3 .rn { color:var(--g3); }
+    .px .rn { color:var(--w3); font-style:normal; font-size:20px; }
+
+    .an { display:flex; flex-direction:column; min-width:0; }
+    .nom { font-family:var(--sans); font-size:20px; font-weight:700; letter-spacing:.5px; line-height:1.1; color:var(--w); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .pre { font-family:var(--sans); font-size:11px; font-weight:300; letter-spacing:2px; text-transform:uppercase; color:var(--w3); margin-top:1px; }
+    .p1 .nom { color:var(--gold2); }
+
+    .sc { text-align:center; font-family:var(--mono); font-size:15px; color:var(--w2); }
+    .sc.hi { font-size:20px; font-weight:500; color:var(--gold2); }
+    .sc.md { font-size:17px; color:var(--w); }
+
+    .htag { display:inline-block; font-family:var(--sans); font-size:11px; font-weight:600; letter-spacing:1px; padding:3px 10px; border-radius:1px; color:var(--gold); background:var(--gold-bg); border:1px solid var(--gold-bd); }
+
+    .empty { padding:28px; text-align:center; font-family:var(--sans); font-size:12px; font-weight:300; letter-spacing:3px; text-transform:uppercase; color:var(--w3); }
+    .errmsg { margin:10px; padding:14px 18px; background:rgba(220,80,60,.08); border:1px solid rgba(220,80,60,.3); border-radius:1px; font-family:var(--sans); font-size:13px; color:#e08868; line-height:2; text-align:center; }
+
+    /* ── SCHEDULE BAR ── */
+    .sched {
+      flex-shrink:0; height:116px;
+      background:var(--panel);
+      border-top:1px solid var(--gold-bd);
+      display:flex; align-items:stretch;
+      overflow:hidden;
+    }
+    .sched-label {
+      display:flex; flex-direction:column; justify-content:center; gap:4px;
+      padding:0 20px; border-right:1px solid var(--border); flex-shrink:0; width:130px;
+    }
+    .sched-label .sl-title { font-family:var(--sans); font-size:10px; font-weight:700; letter-spacing:3px; text-transform:uppercase; color:var(--gold); }
+    .sched-label .sl-sub   { font-family:var(--sans); font-size:10px; font-weight:300; letter-spacing:1px; text-transform:uppercase; color:var(--w3); }
+    .sched-cards { display:flex; align-items:center; gap:10px; padding:10px 16px; overflow-x:auto; flex:1; }
+    .sched-cards::-webkit-scrollbar { height:0; }
+
+    .ecard {
+      flex-shrink:0; width:172px;
+      background:rgba(255,255,255,.04); border:1px solid var(--border);
+      border-radius:2px; padding:10px 12px;
+      display:flex; flex-direction:column; gap:4px;
+    }
+    .ecard.live-card { background:var(--live-bg); border-color:rgba(61,220,132,.4); }
+    .ecard.next-card { background:var(--gold-bg); border-color:var(--gold-bd); }
+    .ecard.done-card { opacity:.35; }
+
+    .ecard-top { display:flex; align-items:center; justify-content:space-between; }
+    .ecard-heat { font-family:var(--sans); font-size:13px; font-weight:700; letter-spacing:2px; color:var(--w); }
+    .ecard-badge { font-family:var(--sans); font-size:9px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; padding:2px 7px; border-radius:1px; }
+    .badge-live { background:var(--live); color:#082010; animation:blink 1.4s ease-in-out infinite; }
+    .badge-next { background:var(--gold); color:#3a2800; }
+    .badge-time { background:rgba(255,255,255,.12); color:var(--w2); }
+    .badge-done { background:rgba(255,255,255,.06); color:var(--w3); }
+
+    .ecard-event { font-family:var(--sans); font-size:11px; font-weight:600; letter-spacing:3px; text-transform:uppercase; }
+    .ev-strength  { color:#a0e0f0; }
+    .ev-endurance { color:#a0f0b8; }
+    .ev-metcon    { color:#f0c0a0; }
+
+    .ecard-time { font-family:var(--mono); font-size:13px; color:var(--w2); }
+    .ecard-athletes { font-family:var(--sans); font-size:11px; font-weight:400; color:var(--w3); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; letter-spacing:.5px; }
+
+
+    /* ── LIVE BANNER (heat en cours) ── */
+    .live-banner { display:none; align-items:center; gap:20px; background:var(--live-bg); border:1px solid rgba(61,220,132,.35); border-radius:2px; padding:12px 18px; margin-bottom:12px; flex-shrink:0; }
+    .lb-left { display:flex; align-items:center; gap:14px; flex-shrink:0; border-right:1px solid rgba(61,220,132,.2); padding-right:18px; }
+    .lb-status { display:flex; align-items:center; gap:6px; font-family:var(--sans); font-size:10px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:var(--live); }
+    .lb-sdot { width:8px; height:8px; border-radius:50%; background:var(--live); animation:blink 1.4s ease-in-out infinite; }
+    .lb-heat { font-family:var(--serif); font-style:italic; font-size:34px; color:var(--live); line-height:1; }
+    .lb-athletes { display:flex; gap:20px; flex:1; flex-wrap:wrap; }
+    .lb-athlete { display:flex; flex-direction:column; gap:1px; min-width:130px; }
+    .lb-name { font-family:var(--sans); font-size:12px; font-weight:400; color:var(--w2); letter-spacing:1px; text-transform:uppercase; }
+    .lb-score { font-family:var(--mono); font-size:22px; font-weight:500; color:var(--w); }
+    .lb-score.done { color:var(--live); }
+    .lb-score.pending { color:var(--w3); font-size:16px; }
+    .lb-timer { flex-shrink:0; text-align:right; border-left:1px solid rgba(61,220,132,.2); padding-left:18px; }
+    .lb-elapsed { font-family:var(--mono); font-size:11px; color:var(--w3); letter-spacing:1px; text-transform:uppercase; margin-bottom:2px; }
+    .lb-chrono { font-family:var(--mono); font-size:28px; font-weight:500; color:var(--live); }
+    .lb-bar-wrap { width:120px; height:3px; background:rgba(61,220,132,.15); border-radius:1px; margin-top:5px; margin-left:auto; }
+    .lb-bar-fill { height:100%; background:var(--live); border-radius:1px; transition:width 1s linear; }
+
+
+    /* ── CONFETTI ── */
+    #confetti-layer { position:fixed; inset:0; pointer-events:none; z-index:9999; overflow:hidden; }
+    .cp { position:absolute; top:-12px; border-radius:2px; animation:cfFall linear forwards; }
+    @keyframes cfFall {
+      0%   { transform:translateY(0) rotate(0deg);    opacity:1; }
+      100% { transform:translateY(105vh) rotate(780deg); opacity:0; }
+    }
+
+    /* ── TICKER ── */
+    .ticker { flex-shrink:0; height:34px; background:var(--surface); border-top:1px solid var(--gold-bd); display:flex; align-items:stretch; overflow:hidden; }
+    .ticker-lbl { padding:0 18px; font-family:var(--sans); font-size:10px; font-weight:700; letter-spacing:3px; text-transform:uppercase; color:var(--gold); flex-shrink:0; border-right:1px solid var(--gold-bd); display:flex; align-items:center; }
+    .ticker-track { flex:1; overflow:hidden; display:flex; align-items:center; }
+    .ticker-inner { display:inline-block; white-space:nowrap; font-family:var(--sans); font-size:14px; letter-spacing:.5px; color:var(--w2); will-change:transform; }
+
+    /* ── RANK ANIMATION ── */
+    @keyframes flashUp   { 0%,100%{background:transparent} 40%{background:rgba(61,220,132,.22)} }
+    @keyframes flashDown { 0%,100%{background:transparent} 40%{background:rgba(224,80,80,.15)} }
+    .row.rank-up   { animation:flashUp   1.2s ease; }
+    .row.rank-down { animation:flashDown 1.2s ease; }
+    .rdelta { position:absolute; right:4px; top:50%; transform:translateY(-50%); font-family:var(--sans); font-size:10px; font-weight:700; padding:2px 5px; border-radius:2px; letter-spacing:.5px; pointer-events:none; }
+    .rdelta.up   { color:#0a2010; background:var(--live); }
+    .rdelta.down { color:#fff; background:rgba(224,80,80,.7); }
+
+    /* ── BOUTON THÈME ── */
+    .theme-btn {
+      background: var(--gold-bg); border:1px solid var(--gold-bd); border-radius:2px;
+      color:var(--gold); font-size:18px; width:38px; height:38px;
+      cursor:pointer; transition:all .2s; display:flex; align-items:center; justify-content:center;
+      flex-shrink:0;
+    }
+    .theme-btn:hover { background:var(--gold-bd); }
+
+    /* ── THÈME CLAIR ── */
+    body.light {
+      /* Fond blanc cassé chaud */
+      --bg:      #ffffff;
+      --surface: #f4ede0;
+      --panel:   #ede4d4;
+      --row:     #f8f4ec;
+      --border:  #c8bca8;
+      /* Or sombre — lisible sur fond clair */
+      --gold:    #6b4200;
+      --gold2:   #8a5800;
+      --gold-bg: #f0e4cc;
+      --gold-bd: #c8a860;
+      /* Texte — solide, pas d'opacité */
+      --w:       #0a1206;
+      --w2:      #2a3820;
+      --w3:      #5a7048;
+      /* Médailles */
+      --g1:      #8a5800;
+      --g2:      #2a4858;
+      --g3:      #6a3010;
+      /* Live */
+      --live:    #0a6830;
+      --live-bg: #d8f0e4;
+      /* Genre */
+      --blue:    #0a5090;
+      --pink:    #980840;
+    }
+
+    /* Textes */
+    body.light .brand-main  { color:#6b4200; }
+    body.light .brand-sub   { color:#5a7048; }
+    body.light .epicure     { color:#2a3820; }
+    body.light .clock       { color:#2a3820; }
+    body.light .edition     { color:#6b4200; border-color:#c8a860; background:#f0e4cc; }
+    body.light .live-badge  { color:#0a6830; border-color:#6abf90; background:#d8f0e4; }
+    body.light .live-dot    { background:#0a6830; }
+    body.light .theme-btn   { color:#6b4200; border-color:#c8a860; background:#f0e4cc; }
+
+    /* Nav */
+    body.light .nav         { background:#f4ede0; border-bottom-color:#c8bca8; }
+    body.light .tab         { color:#5a7048; }
+    body.light .tab:hover   { color:#0a1206; background:#ede4d4; }
+    body.light .tab.on      { color:#6b4200; border-bottom-color:#8a5800; background:#f0e4cc; }
+
+    /* Contenu */
+    body.light .vtitle      { border-bottom-color:#c8a860; }
+    body.light .vtitle h2   { color:#0a1206; }
+    body.light .vtitle span { color:#5a7048; }
+
+    /* Labels genre */
+    body.light .glabel.m { color:#0a5090; border-color:#7ab0d8; background:#e0eefc; }
+    body.light .glabel.f { color:#980840; border-color:#d888a0; background:#fce8ee; }
+
+    /* Entêtes de tableau */
+    body.light .thead       { color:#6b4200; opacity:1; border-bottom-color:#c8bca8; }
+
+    /* Lignes athlètes */
+    body.light .row.px      { background:#f8f4ec; border-left-color:transparent; }
+    body.light .row.p1      { background:#fdf4e0; border-left-color:#8a5800; }
+    body.light .row.p2      { background:#f0f4f8; border-left-color:#2a4858; }
+    body.light .row.p3      { background:#fdf0e8; border-left-color:#6a3010; }
+    body.light .row.p1::after { display:none; }
+
+    /* Noms */
+    body.light .nom         { color:#0a1206; }
+    body.light .p1 .nom     { color:#6b4200; }
+    body.light .pre         { color:#5a7048; }
+    body.light .px .rn      { color:#5a7048; }
+
+    /* Scores */
+    body.light .sc          { color:#2a3820; }
+    body.light .sc.hi       { color:#7a4800; }
+    body.light .sc.md       { color:#0a1206; }
+    body.light .sc.rang     { color:#7a4800; }
+    body.light .empty       { color:#5a7048; }
+
+    /* Heat badge */
+    body.light .htag { color:#6b4200; background:#f0e4cc; border-color:#c8a860; }
+
+    /* Scrollbar */
+    body.light .tbody::-webkit-scrollbar-thumb { background:#c8bca8; }
+
+    /* Live banner */
+    body.light .live-banner { background:#d8f0e4; border-color:#6abf90; }
+    body.light .lb-status   { color:#0a6830; }
+    body.light .lb-sdot     { background:#0a6830; }
+    body.light .lb-heat     { color:#0a6830; }
+    body.light .lb-name     { color:#2a3820; }
+    body.light .lb-score    { color:#0a1206; }
+    body.light .lb-score.done    { color:#0a6830; }
+    body.light .lb-score.pending { color:#5a7048; }
+    body.light .lb-elapsed  { color:#5a7048; }
+    body.light .lb-chrono   { color:#0a6830; }
+    body.light .lb-left     { border-right-color:#6abf90; }
+    body.light .lb-timer    { border-left-color:#6abf90; }
+    body.light .lb-bar-wrap { background:#a8d8bc; }
+    body.light .lb-bar-fill { background:#0a6830; }
+
+    /* Schedule / programme */
+    body.light .sched       { background:#ede4d4; border-top-color:#c8a860; }
+    body.light .sched-label { border-right-color:#c8bca8; }
+    body.light .sl-title    { color:#6b4200; }
+    body.light .sl-sub      { color:#5a7048; }
+    body.light .ecard       { background:#f4ede0; border-color:#c8bca8; }
+    body.light .ecard.live-card { background:#d8f0e4; border-color:#6abf90; }
+    body.light .ecard.next-card { background:#fdf4e0; border-color:#c8a860; }
+    body.light .ecard.done-card { opacity:.45; }
+    body.light .ecard-heat  { color:#0a1206; }
+    body.light .ecard-time  { color:#2a3820; }
+    body.light .ecard-athletes { color:#5a7048; }
+    body.light .ev-strength  { color:#0a5090; }
+    body.light .ev-endurance { color:#0a6830; }
+    body.light .ev-metcon    { color:#7a4800; }
+    body.light .badge-time  { background:#e0d8c8; color:#2a3820; }
+    body.light .badge-done  { background:#ddd8cc; color:#5a7048; }
+
+    /* Ticker */
+    body.light .ticker      { background:#ede4d4; border-top-color:#c8a860; }
+    body.light .ticker-lbl  { color:#6b4200; border-right-color:#c8a860; }
+    body.light .ticker-inner { color:#2a3820; }
+
+    /* Barre de progression */
+    body.light .pbar        { background:#ddd4c0; }
+    body.light .pfill       { background:linear-gradient(90deg,#8a5800,#b07820); }
+
+    /* Erreur */
+    body.light .errmsg      { background:#fdeae4; border-color:#e0a090; color:#7a2808; }
+
+    /* Animations de rang */
+    body.light .rdelta.up   { background:#0a6830; color:#ffffff; }
+    body.light .rdelta.down { background:#c02020; color:#ffffff; }
+
+    /* ── PROGRESS BAR ── */
+    .pbar { flex-shrink:0; height:3px; background:rgba(245,192,48,.1); }
+    .pfill { height:100%; background:linear-gradient(90deg,var(--gold),var(--gold2)); transition:width .5s linear; }
+  </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="hdr">
+  <div>
+    <div class="brand-main">ATHX</div>
+    <div class="brand-sub">Compétition d'athlétisme fonctionnel</div>
+  </div>
+  <div class="hdr-mid">
+    <div class="edition">Édition 1</div>
+    <div class="epicure">Epicure Social Club · Tours</div>
+  </div>
+  <div class="hdr-right">
+    <div class="live-badge"><div class="live-dot"></div>Live</div>
+    <button class="theme-btn" id="theme-btn" onclick="toggleTheme()" title="Mode clair / sombre">☀</button>
+    <div class="clock" id="clock">--:--:--</div>
+  </div>
+</div>
+
+<!-- NAV -->
+<div class="nav">
+  <div class="tab on" data-v="global"    onclick="go('global',true)">◆ &nbsp;Classement</div>
+  <div class="tab"    data-v="strength"  onclick="go('strength',true)">▲ &nbsp;Strength</div>
+  <div class="tab"    data-v="endurance" onclick="go('endurance',true)">◎ &nbsp;Endurance</div>
+  <div class="tab"    data-v="metcon"    onclick="go('metcon',true)">◇ &nbsp;Metcon</div>
+</div>
+
+<!-- SCOREBOARD -->
+<div class="content">
+
+  <!-- CLASSEMENT GÉNÉRAL -->
+  <div class="view on" id="v-global">
+    <div class="vtitle"><h2>Classement Général</h2><span>Cumul des rangs — Strength + Endurance + Metcon</span></div>
+    <div class="cols">
+      <div class="col">
+        <div class="glabel m">♂ &nbsp;Hommes</div>
+        <div class="thead cg"><span></span><span>Athlète</span><span style="text-align:center">STR</span><span style="text-align:center">END</span><span style="text-align:center">MET</span><span style="text-align:center">Total</span></div>
+        <div class="tbody" id="gb-h"></div>
+      </div>
+      <div class="col">
+        <div class="glabel f">♀ &nbsp;Femmes</div>
+        <div class="thead cg"><span></span><span>Athlète</span><span style="text-align:center">STR</span><span style="text-align:center">END</span><span style="text-align:center">MET</span><span style="text-align:center">Total</span></div>
+        <div class="tbody" id="gb-f"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STRENGTH -->
+  <div class="view" id="v-strength">
+    <div class="vtitle"><h2>Strength</h2><span>Strict Press · Back Squat · Deadlift</span></div>
+    <div class="live-banner" id="lb-strength"></div>
+    <div class="cols">
+      <div class="col">
+        <div class="glabel m">♂ &nbsp;Hommes</div>
+        <div class="thead cs"><span></span><span>Athlète</span><span>Heat</span><span style="text-align:center">Press</span><span style="text-align:center">Squat</span><span style="text-align:center">Deadlift</span><span style="text-align:center">Total kg</span><span style="text-align:center">Rang</span></div>
+        <div class="tbody" id="str-h"></div>
+      </div>
+      <div class="col">
+        <div class="glabel f">♀ &nbsp;Femmes</div>
+        <div class="thead cs"><span></span><span>Athlète</span><span>Heat</span><span style="text-align:center">Press</span><span style="text-align:center">Squat</span><span style="text-align:center">Deadlift</span><span style="text-align:center">Total kg</span><span style="text-align:center">Rang</span></div>
+        <div class="tbody" id="str-f"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ENDURANCE -->
+  <div class="view" id="v-endurance">
+    <div class="vtitle"><h2>Endurance</h2><span>Distance parcourue en 30 minutes</span></div>
+    <div class="live-banner" id="lb-endurance"></div>
+    <div class="cols">
+      <div class="col">
+        <div class="glabel m">♂ &nbsp;Hommes</div>
+        <div class="thead ce"><span></span><span>Athlète</span><span>Heat</span><span>Distance</span><span style="text-align:center">Rang</span></div>
+        <div class="tbody" id="end-h"></div>
+      </div>
+      <div class="col">
+        <div class="glabel f">♀ &nbsp;Femmes</div>
+        <div class="thead ce"><span></span><span>Athlète</span><span>Heat</span><span>Distance</span><span style="text-align:center">Rang</span></div>
+        <div class="tbody" id="end-f"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- METCON -->
+  <div class="view" id="v-metcon">
+    <div class="vtitle"><h2>Metcon</h2><span>For Time — Cap 30 minutes</span></div>
+    <div class="live-banner" id="lb-metcon"></div>
+    <div class="cols">
+      <div class="col">
+        <div class="glabel m">♂ &nbsp;Hommes</div>
+        <div class="thead cm"><span></span><span>Athlète</span><span>Heat</span><span>Résultat</span><span style="text-align:center">Rang</span></div>
+        <div class="tbody" id="met-h"></div>
+      </div>
+      <div class="col">
+        <div class="glabel f">♀ &nbsp;Femmes</div>
+        <div class="thead cm"><span></span><span>Athlète</span><span>Heat</span><span>Résultat</span><span style="text-align:center">Rang</span></div>
+        <div class="tbody" id="met-f"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PROCHAINS DÉPARTS -->
+<div class="sched">
+  <div class="sched-label">
+    <div class="sl-title">Programme</div>
+    <div class="sl-sub">Prochains<br>départs</div>
+  </div>
+  <div class="sched-cards" id="sched-cards">
+    <div style="color:var(--w3);font-family:var(--sans);font-size:12px;letter-spacing:2px;text-transform:uppercase;padding:0 8px;">Chargement…</div>
+  </div>
+</div>
+
+<div class="ticker">
+  <div class="ticker-lbl">News</div>
+  <div class="ticker-track"><span class="ticker-inner" id="ticker-inner"></span></div>
+</div>
+<div class="pbar"><div class="pfill" id="pfill" style="width:100%"></div></div>
+<div id="confetti-layer"></div>
+
+<script>
+
+// ── MESSAGES DU TICKER ─────────────────────────────────────
+// Modifie cette liste pour personnaliser le défilé en bas d'écran
+// Messages de secours si B17 est vide — laisse vide ou ajoute tes propres messages
+const MESSAGES = [];
+
+// ── CONFETTIS ──────────────────────────────────────────────
+const CF_COLORS = ['#f5c030','#ffd860','#ffffff','#3ddc84','#88ccff','#ffaaaa'];
+function launchConfetti() {
+  const layer = document.getElementById('confetti-layer');
+  layer.innerHTML = '';
+  for (let i = 0; i < 70; i++) {
+    const p = document.createElement('div');
+    p.className = 'cp';
+    const size = Math.random() * 9 + 5;
+    const dur  = Math.random() * 2.5 + 2;
+    const del  = Math.random() * 1.8;
+    p.style.cssText = `
+      left:${Math.random()*100}%;
+      width:${size}px; height:${size * (Math.random()>.5 ? 1 : .4)}px;
+      background:${CF_COLORS[Math.floor(Math.random()*CF_COLORS.length)]};
+      animation-duration:${dur}s; animation-delay:${del}s;
+      border-radius:${Math.random()>.5?'50%':'2px'};
+    `;
+    layer.appendChild(p);
+  }
+  setTimeout(() => layer.innerHTML = '', 5500);
+}
+
+let _prevLeaders = { h: null, f: null };
+function checkLeaders(globData) {
+  const top = g => globData.filter(a => a.genre===g && a.nom)
+    .sort((a,b) => (+a['Rang Final']||99)-(+b['Rang Final']||99))[0]?.nom || null;
+  const h = top('Homme'), f = top('Femme');
+  const changed = (_prevLeaders.h && _prevLeaders.h!==h) || (_prevLeaders.f && _prevLeaders.f!==f);
+  _prevLeaders = {h, f};
+  if (changed) launchConfetti();
+}
+
+// ── TICKER ─────────────────────────────────────────────────
+
+// ── MESSAGE LIVE (cellule B17 de Heures_départ) ────────────
+// Écris ton message dans la cellule B17 de l'onglet "Heures_départ"
+// Il apparaîtra en premier dans le ticker en moins de 30 secondes.
+// ── Cellule de message live ──────────────────────────────────
+// Écris ton message dans la cellule B17 de l'onglet "Heures_départ"
+// Modifie NEWS_CELL si tu veux utiliser une autre cellule
+const NEWS_CELL = 'B17';
+
+function loadLiveMessage() {
+  return new Promise(resolve => {
+    const cb = `_lmsg${Date.now()}`;
+    const s = document.createElement('script');
+    window[cb] = resp => {
+      delete window[cb]; s.parentNode && s.parentNode.removeChild(s);
+      try {
+        const cell = resp?.table?.rows?.[0]?.c?.[0];
+        // cell.v = valeur brute, cell.f = valeur formatée (texte affiché dans Sheets)
+        const val = (cell?.v != null ? cell.v : cell?.f) ?? '';
+        resolve(String(val).trim());
+      } catch { resolve(''); }
+    };
+    s.onerror = () => { delete window[cb]; resolve(''); };
+    // range=B17 : cible directement la cellule sans requête SQL complexe
+    s.src = `https://docs.google.com/spreadsheets/d/${C.SHEET_ID}/gviz/tq?tqx=out:json;responseHandler:${cb}&gid=${C.GID.schedule}&range=${NEWS_CELL}&t=${Date.now()}`;
+    document.head.appendChild(s);
+  });
+}
+
+// Animation ticker via requestAnimationFrame (0 bug CSS, vitesse stable)
+let _tickRAF = null;
+let _tickX   = 0;
+
+function _tickFrame(el, trackW, textW) {
+  _tickX -= 1.5; // px par frame ~= 90px/s à 60fps — bon rythme TV
+  if (_tickX < -textW - 40) _tickX = trackW + 20;
+  el.style.transform = `translateX(${Math.round(_tickX)}px)`;
+  _tickRAF = requestAnimationFrame(() => _tickFrame(el, trackW, textW));
+}
+
+function renderTicker(liveMsg) {
+  const el    = document.getElementById('ticker-inner');
+  const track = document.querySelector('.ticker-track');
+  if (!el || !track) return;
+
+  // Message : B17 en priorité, fallback sur MESSAGES sinon
+  const msg = liveMsg
+    ? liveMsg
+    : MESSAGES.length ? MESSAGES.join('   ·   ') : '';
+
+  // Arrêter l'animation en cours
+  if (_tickRAF) { cancelAnimationFrame(_tickRAF); _tickRAF = null; }
+
+  if (!msg) { el.textContent = ''; return; }
+
+  el.textContent = msg;
+  el.style.transform = '';
+
+  // Attendre un frame pour que scrollWidth soit à jour
+  requestAnimationFrame(() => {
+    const trackW = track.clientWidth || 900;
+    const textW  = el.scrollWidth   || msg.length * 9;
+    _tickX = trackW + 20; // démarre juste hors-écran à droite
+    _tickFrame(el, trackW, textW);
+  });
+}
+
+async function initTicker() {
+  const msg = await loadLiveMessage();
+  renderTicker(msg);
+}
+
+
+// ── RANK ANIMATIONS ────────────────────────────────────────
+const _prevRanks = {};
+
+// Vérifie si des rangs ont changé dans cette épreuve (compare new data vs anciens rangs stockés)
+function hasChanges(data, key) {
+  return data.some(a => {
+    if (!a.nom) return false;
+    const newR = +(a.rang || a['Rang Final'] || 99);
+    const oldR = _prevRanks[`${key}_${a.nom}`];
+    return oldR != null && oldR !== newR;
+  });
+}
+
+// Sauvegarde les rangs actuels pour la prochaine comparaison
+function savePrevRanks(data, key) {
+  data.forEach(a => {
+    if (a.nom) _prevRanks[`${key}_${a.nom}`] = +(a.rang || a['Rang Final'] || 99);
+  });
+}
+
+function animateRankChanges(data, key, containerIds) {
+  let hasChanges = false;
+  containerIds.forEach(cid => {
+    const el = document.getElementById(cid);
+    if (!el) return;
+    el.querySelectorAll('.row').forEach(row => {
+      const nomEl = row.querySelector('.nom');
+      if (!nomEl) return;
+      const nom = nomEl.textContent.trim();
+      const athlete = data.find(a => a.nom === nom);
+      if (!athlete) return;
+      const newR = +(athlete.rang || athlete['Rang Final'] || 99);
+      const oldR = _prevRanks[`${key}_${nom}`];
+      if (oldR == null || oldR === newR) return;
+      hasChanges = true;
+      const delta = oldR - newR;
+      row.classList.remove('rank-up','rank-down');
+      void row.offsetWidth;
+      row.classList.add(delta > 0 ? 'rank-up' : 'rank-down');
+      row.style.position = 'relative';
+      const badge = document.createElement('div');
+      badge.className = `rdelta ${delta > 0 ? 'up' : 'down'}`;
+      badge.textContent = delta > 0 ? `↑${delta}` : `↓${Math.abs(delta)}`;
+      row.appendChild(badge);
+      setTimeout(() => { row.classList.remove('rank-up','rank-down'); badge.remove(); }, 3000);
+    });
+  });
+  return hasChanges;
+}
+// ── CONFIG ─────────────────────────────────────────────────────
+const C = {
+  SHEET_ID: "1ehB8KdfHUaEn36MWWyDmsx6jp3RcJnyC-8srkSITyG0",
+  GID: {
+    schedule:  "1832229786",
+    global:    "1379572064",
+    strength:  "219414956",
+    endurance: "813975733",
+    metcon:    "735245184",
+  },
+  REFRESH_MS: 30_000,
+  ROTATE_MS:  15_000,
+};
+
+// ── JSONP LOADER (fonctionne sans serveur) ─────────────────────
+function loadSheet(gid) {
+  return new Promise((resolve, reject) => {
+    const cb = `_gv${gid}x${Date.now()}`;
+    const s = document.createElement('script');
+    window[cb] = (resp) => {
+      delete window[cb];
+      s.parentNode && s.parentNode.removeChild(s);
+      if (resp.status !== 'ok') { reject(new Error(resp.errors?.[0]?.message || 'Erreur')); return; }
+      const cols = resp.table.cols.map(c => c.label || c.id);
+      const rows = (resp.table.rows || []).map(row => {
+        const obj = {};
+        (row.c || []).forEach((cell, i) => {
+          if (!cell || cell.v == null) { obj[cols[i]] = ''; return; }
+          // gviz renvoie les heures comme "Date(1899,11,30,9,0,0)" -> utiliser cell.f
+          if (typeof cell.v === 'string' && cell.v.startsWith('Date(')) {
+            obj[cols[i]] = cell.f || '';
+          } else {
+            obj[cols[i]] = String(cell.v);
+          }
+        });
+        return obj;
+      });
+      resolve(rows);
+    };
+    s.onerror = () => { delete window[cb]; reject(new Error(`Onglet inaccessible (GID ${gid}). Vérifie que le sheet est partagé en "Tout le monde peut voir".`)); };
+    s.src = `https://docs.google.com/spreadsheets/d/${C.SHEET_ID}/gviz/tq?tqx=out:json;responseHandler:${cb}&gid=${gid}&t=${Date.now()}`;
+    document.head.appendChild(s);
+  });
+}
+
+// ── HELPERS ────────────────────────────────────────────────────
+const rCls = v => { const n=+v; return n===1?'p1':n===2?'p2':n===3?'p3':'px'; };
+// Convertit duree_sec (nombre de secondes OU chaîne "0:16:00") en MM:SS
+function fmtDuration(val) {
+  if (!val) return null;
+  const n = +val;
+  // Cas 1 : nombre de secondes (ex: 960 -> "16:00")
+  if (!isNaN(n) && n > 0) {
+    const m=Math.floor(n/60), s=Math.round(n%60);
+    return `${m}:${String(s).padStart(2,'0')}`;
+  }
+  // Cas 2 : chaîne de temps "0:16:00" ou "16:00" (si Sheets stocke en durée)
+  const t = parseTimeVal(val);
+  if (t) {
+    const sec = t.h * 3600 + t.m * 60 + t.s;
+    if (sec > 0) { const m=Math.floor(sec/60), s=Math.round(sec%60); return `${m}:${String(s).padStart(2,'0')}`; }
+  }
+  return null;
+}
+const kgS  = v => v&&+v ? `${v} kg` : '—';
+const dmS  = v => v&&+v ? `${(+v).toLocaleString('fr-FR')} m` : '—';
+const pre  = (n,p) => `<div class="an"><div class="nom">${n}</div><div class="pre">${p}</div></div>`;
+const ht   = v => `<div class="sc"><span class="htag">${v||''}</span></div>`;
+const row  = (rank, inner, tpl) => `<div class="row ${rCls(rank)} ${tpl}"><div class="rn">${rank||'—'}</div>${inner}</div>`;
+
+// Parse robuste des heures (gère "09:00", "09:00:00", "9:00:00 AM", "Date(1899,11,30,9,0,0)")
+function parseTimeVal(str) {
+  if (!str) return null;
+  str = String(str).trim();
+
+  // format gviz brut au cas où cell.f serait vide
+  if (str.startsWith('Date(')) {
+    const m = str.match(/Date\(\d+,\d+,\d+,(\d+),(\d+),(\d+)\)/);
+    if (m) return { h:+m[1], m:+m[2], s:+m[3] };
+  }
+
+  // "9:00:00 AM" / "9:00:00 PM"
+  if (/[AP]M/i.test(str)) {
+    const isPM = /PM/i.test(str);
+    const p = str.replace(/\s*[AP]M/i,'').split(':');
+    let h = +p[0];
+    if (isPM && h !== 12) h += 12;
+    if (!isPM && h === 12) h = 0;
+    return { h, m: +p[1]||0, s: +p[2]||0 };
+  }
+
+  // "09:00" ou "09:00:00"
+  const p = str.split(':');
+  if (p.length >= 2 && !isNaN(+p[0])) return { h:+p[0], m:+p[1]||0, s:+p[2]||0 };
+
+  return null;
+}
+
+function parseHHMM(str) {
+  const t = parseTimeVal(str);
+  if (!t) return null;
+  const d = new Date();
+  d.setHours(t.h, t.m, t.s, 0);
+  return d;
+}
+
+function fmtHHMM(str) {
+  const t = parseTimeVal(str);
+  if (!t) return '—';
+  return `${String(t.h).padStart(2,'0')}:${String(t.m).padStart(2,'0')}`;
+}
+
+function countdown(target) {
+  const diff = Math.round((target - Date.now()) / 1000);
+  if (diff <= 0) return null;
+  const m = Math.floor(diff / 60), s = diff % 60;
+  return m > 0 ? `dans ${m}min` : `dans ${s}s`;
+}
+
+// ── RENDER SCOREBOARD ──────────────────────────────────────────
+function renderGlobal(data, id, genre) {
+  const el = document.getElementById(id);
+  const rows = data.filter(r => r.genre===genre && r.nom).sort((a,b) => (+a['Rang Final']||99)-(+b['Rang Final']||99));
+  if (!rows.length) { el.innerHTML='<div class="empty">Aucune donnée</div>'; return; }
+  el.innerHTML = rows.map(a => row(
+    a['Rang Final'],
+    pre(a.nom, a['prénom']||'') +
+    `<div class="sc">${a['Rang Strength']||'—'}</div>
+     <div class="sc">${a['Rang Endurance']||'—'}</div>
+     <div class="sc">${a['Rang Metcon']||'—'}</div>
+     <div class="sc hi">${a['Score Global']||'—'}</div>`, 'cg'
+  )).join('');
+}
+
+function renderStrength(data, id, genre) {
+  const el = document.getElementById(id);
+  const rows = data.filter(r => r.genre===genre && r.nom).sort((a,b) => (+a.rang||99)-(+b.rang||99));
+  if (!rows.length) { el.innerHTML='<div class="empty">Aucune donnée</div>'; return; }
+  el.innerHTML = rows.map(a => row(
+    a.rang,
+    pre(a.nom, a['prénom']||'') + ht(a.heat) +
+    `<div class="sc">${kgS(a.strict_press)}</div>
+     <div class="sc">${kgS(a.back_squat)}</div>
+     <div class="sc">${kgS(a.deadlift)}</div>
+     <div class="sc hi">${kgS(a.total_kg)}</div>
+     <div class="sc rang">${a.rang||'—'}</div>`, 'cs'
+  )).join('');
+}
+
+function renderEndurance(data, id, genre) {
+  const el = document.getElementById(id);
+  const rows = data.filter(r => r.genre===genre && r.nom).sort((a,b) => (+a.rang||99)-(+b.rang||99));
+  if (!rows.length) { el.innerHTML='<div class="empty">Aucune donnée</div>'; return; }
+  el.innerHTML = rows.map(a => row(
+    a.rang,
+    pre(a.nom, a['prénom']||'') + ht(a.heat) +
+    `<div class="sc hi">${dmS(a.distance_m)}</div>
+     <div class="sc rang">${a.rang||'—'}</div>`, 'ce'
+  )).join('');
+}
+
+function renderMetcon(data, id, genre) {
+  const el = document.getElementById(id);
+  const rows = data.filter(r => r.genre===genre && r.nom).sort((a,b) => (+a.rang||99)-(+b.rang||99));
+  if (!rows.length) { el.innerHTML='<div class="empty">Aucune donnée</div>'; return; }
+  el.innerHTML = rows.map(a => {
+    const timeStr = fmtDuration(a.duree_sec);
+    const hasReps = a.reps_si_cap && +a.reps_si_cap > 0;
+    const res = timeStr ? timeStr : hasReps ? `CAP + ${a.reps_si_cap} reps` : '—';
+    return row(a.rang,
+      pre(a.nom, a['prénom']||'') + ht(a.heat) +
+      `<div class="sc md">${res}</div>
+       <div class="sc rang">${a.rang||'—'}</div>`, 'cm');
+  }).join('');
+}
+
+function showError(msg) {
+  const h = `<div class="errmsg">⚠ ${msg}</div>`;
+  ['gb-h','gb-f','str-h','str-f','end-h','end-f','met-h','met-f'].forEach(id => {
+    const e = document.getElementById(id); if(e) e.innerHTML = h;
+  });
+}
+
+// ── RENDER SCHEDULE ────────────────────────────────────────────
+let scheduleEvents = [];
+
+function buildSchedule(data) {
+  const seen = new Set();
+  const heatMap = {};
+
+  data.forEach(row => {
+    const heat = row.heat || row['heat '];
+    if (!heat || seen.has(heat)) return;
+    seen.add(heat);
+
+    const athletes = data.filter(r => (r.heat||r['heat ']) === heat && r.nom)
+      .map(r => r.nom).filter(Boolean);
+
+    const timeFields = [
+      { label:'start_strength',  end:'end_strength'  },
+      { label:'start_endurance', end:'end_endurance'  },
+      { label:'start_metcon',    end:'cap_metcon'     },
+    ];
+
+    timeFields.forEach(({ label, end }) => {
+      const startStr = row[label];
+      const endStr   = row[end];
+      if (!startStr) return;
+
+      const eventName = label.replace('start_','').toUpperCase();
+      heatMap[`${heat}_${eventName}`] = {
+        heat, event: eventName,
+        startStr, endStr,
+        startTime: parseHHMM(startStr),
+        endTime:   parseHHMM(endStr),
+        athletes,
+      };
+    });
+  });
+
+  scheduleEvents = Object.values(heatMap).sort((a,b) => a.startTime - b.startTime);
+  renderSchedule();
+}
+
+function renderSchedule() {
+  const now = new Date();
+  const container = document.getElementById('sched-cards');
+  if (!scheduleEvents.length) {
+    container.innerHTML = '<div style="color:var(--w3);font-family:var(--sans);font-size:12px;letter-spacing:2px;text-transform:uppercase;padding:0 8px;">Aucune donnée</div>';
+    return;
+  }
+
+  // Find first upcoming or live event index
+  let focusIdx = scheduleEvents.findIndex(e => e.endTime > now);
+  if (focusIdx < 0) focusIdx = scheduleEvents.length - 1;
+  const startIdx = Math.max(0, focusIdx - 1);
+
+  // Determine which is "next" (first not-yet-started)
+  const nextIdx = scheduleEvents.findIndex(e => e.startTime > now);
+
+  const cards = scheduleEvents.map((ev, i) => {
+    const isLive = ev.startTime <= now && ev.endTime > now;
+    const isNext = i === nextIdx;
+    const isDone = ev.endTime <= now;
+    const isFuture = ev.startTime > now;
+
+    let cardClass = 'ecard';
+    if (isLive) cardClass += ' live-card';
+    else if (isNext) cardClass += ' next-card';
+    else if (isDone) cardClass += ' done-card';
+
+    let badgeClass = 'ecard-badge';
+    let badgeText;
+    if (isLive) { badgeClass += ' badge-live'; badgeText = 'EN COURS'; }
+    else if (isNext) { badgeClass += ' badge-next'; badgeText = countdown(ev.startTime) || 'PROCHAIN'; }
+    else if (isDone) { badgeClass += ' badge-done'; badgeText = '✓'; }
+    else { badgeClass += ' badge-time'; badgeText = countdown(ev.startTime) || fmtHHMM(ev.startStr); }
+
+    const evColorClass = ev.event === 'STRENGTH' ? 'ev-strength' : ev.event === 'ENDURANCE' ? 'ev-endurance' : 'ev-metcon';
+    const timeRange = `${fmtHHMM(ev.startStr)} → ${fmtHHMM(ev.endStr)}`;
+    const athleteStr = ev.athletes.length ? ev.athletes.join(' · ') : 'TBD';
+
+    return `<div class="${cardClass}">
+      <div class="ecard-top">
+        <span class="ecard-heat">${ev.heat}</span>
+        <span class="${badgeClass}">${badgeText}</span>
+      </div>
+      <div class="ecard-event ${evColorClass}">${ev.event}</div>
+      <div class="ecard-time">${timeRange}</div>
+      <div class="ecard-athletes">${athleteStr}</div>
+    </div>`;
+  });
+
+  container.innerHTML = cards.join('');
+
+  // Scroll to focus card
+  setTimeout(() => {
+    const liveCard = container.querySelector('.live-card') || container.querySelector('.next-card');
+    if (liveCard) liveCard.scrollIntoView({ behavior:'smooth', block:'nearest', inline:'center' });
+  }, 100);
+}
+
+// Re-render schedule every 30s to update countdowns
+setInterval(renderSchedule, 30_000);
+
+
+// ── LIVE BANNERS ───────────────────────────────────────────────
+let _strData=[], _endData=[], _metData=[];
+
+function fmtSec(sec) {
+  const s = Math.max(0, Math.round(sec));
+  const m = Math.floor(s/60), r = s%60;
+  return `${String(m).padStart(2,'0')}:${String(r).padStart(2,'0')}`;
+}
+
+function getLiveEvent(eventType) {
+  const now = new Date();
+  return scheduleEvents.find(e => e.event===eventType && e.startTime<=now && e.endTime>now) || null;
+}
+
+function renderLiveBanner(bannerId, eventType, scoreData) {
+  const el = document.getElementById(bannerId);
+  if (!el) return;
+  const ev = getLiveEvent(eventType);
+  if (!ev) { el.style.display='none'; return; }
+
+  const now = new Date();
+  const elapsed  = Math.max(0, (now - ev.startTime) / 1000);
+  const remaining= Math.max(0, (ev.endTime - now) / 1000);
+  const total    = (ev.endTime - ev.startTime) / 1000;
+  const progress = Math.min(100, (elapsed/total)*100).toFixed(1);
+
+  // Chrono label
+  const isMetcon   = eventType === 'METCON';
+  const chronoStr  = isMetcon ? fmtSec(remaining) : fmtSec(elapsed);
+  const chronoLabel= isMetcon ? 'RESTANT' : 'ÉCOULÉ';
+
+  // Athletes of this heat
+  const heatAthletes = scoreData.filter(a => a.heat===ev.heat && a.nom);
+
+  const athleteCards = heatAthletes.map(a => {
+    let score='', cls='pending';
+    if (eventType==='STRENGTH') {
+      const kg=a.total_kg&&+a.total_kg>0;
+      score = kg ? `${a.total_kg} kg` : '—'; cls = kg?'done':'pending';
+    } else if (eventType==='ENDURANCE') {
+      const dm=a.distance_m&&+a.distance_m>0;
+      score = dm ? `${(+a.distance_m).toLocaleString('fr-FR')} m` : '⏳ en cours'; cls=dm?'done':'pending';
+    } else if (eventType==='METCON') {
+      const t=fmtDuration(a.duree_sec);
+      const reps=a.reps_si_cap&&+a.reps_si_cap>0;
+      if(t)      { score=`✓ ${t}`;        cls='done'; }
+      else if(reps){ score=`CAP +${a.reps_si_cap}`; cls='done'; }
+      else       { score='⏳ en cours';   cls='pending'; }
+    }
+    return `<div class="lb-athlete">
+      <div class="lb-name">${a.nom} ${a['prénom']||''}</div>
+      <div class="lb-score ${cls}">${score}</div>
+    </div>`;
+  }).join('');
+
+  el.style.display='flex';
+  el.innerHTML = `
+    <div class="lb-left">
+      <div class="lb-status"><div class="lb-sdot"></div>En cours</div>
+      <div class="lb-heat">${ev.heat}</div>
+    </div>
+    <div class="lb-athletes">${athleteCards || '<div style="color:var(--w3);font-size:14px;">Aucun athlète inscrit</div>'}</div>
+    <div class="lb-timer">
+      <div class="lb-elapsed">${chronoLabel}</div>
+      <div class="lb-chrono">${chronoStr}</div>
+      <div class="lb-bar-wrap"><div class="lb-bar-fill" style="width:${progress}%"></div></div>
+    </div>`;
+}
+
+function refreshLiveBanners() {
+  renderLiveBanner('lb-strength', 'STRENGTH', _strData);
+  renderLiveBanner('lb-endurance','ENDURANCE',_endData);
+  renderLiveBanner('lb-metcon',   'METCON',   _metData);
+}
+
+// Update chrono every second
+setInterval(refreshLiveBanners, 1000);
+
+
+// ── CHARGEMENT D'UNE CELLULE (ex: B17) ────────────────────────
+function loadCell(gid, range) {
+  return new Promise(resolve => {
+    const cb = `_cell${Date.now()}`;
+    const s = document.createElement('script');
+    window[cb] = (resp) => {
+      delete window[cb]; s.parentNode && s.parentNode.removeChild(s);
+      try { resolve(resp.table.rows[0]?.c[0]?.v || ''); }
+      catch(e) { resolve(''); }
+    };
+    s.onerror = () => { delete window[cb]; resolve(''); };
+    s.src = `https://docs.google.com/spreadsheets/d/${C.SHEET_ID}/gviz/tq?tqx=out:json;responseHandler:${cb}&gid=${gid}&range=${range}&t=${Date.now()}`;
+    document.head.appendChild(s);
+  });
+}
+
+// ── LOAD ALL ───────────────────────────────────────────────────
+async function loadAll() {
+  try {
+    const [sched, glob, str, end, met] = await Promise.all([
+      loadSheet(C.GID.schedule),
+      loadSheet(C.GID.global),
+      loadSheet(C.GID.strength),
+      loadSheet(C.GID.endurance),
+      loadSheet(C.GID.metcon),
+    ]);
+
+    // 1. Détecter les changements de rang AVANT de sauvegarder les nouveaux
+    //    _prevRanks contient encore les anciens rangs → comparaison correcte
+    const VIEW_PRIORITY = [
+      { key:'GLOBAL', view:'global',    data:glob },
+      { key:'STR',    view:'strength',  data:str  },
+      { key:'END',    view:'endurance', data:end  },
+      { key:'MET',    view:'metcon',    data:met  },
+    ];
+    const changed = VIEW_PRIORITY.filter(v => hasChanges(v.data, v.key));
+
+    // 2. Naviguer vers la vue du changement (global > strength > endurance > metcon)
+    if (changed.length > 0) go(changed[0].view, true);
+
+    // 3. Render
+    _strData=str; _endData=end; _metData=met;
+    renderGlobal(glob,'gb-h','Homme');    renderGlobal(glob,'gb-f','Femme');
+    renderStrength(str,'str-h','Homme'); renderStrength(str,'str-f','Femme');
+    renderEndurance(end,'end-h','Homme');renderEndurance(end,'end-f','Femme');
+    renderMetcon(met,'met-h','Homme');   renderMetcon(met,'met-f','Femme');
+    buildSchedule(sched);
+    refreshLiveBanners();
+
+    // 4. Animations après la transition de vue (450ms)
+    const delay = changed.length > 0 ? 450 : 0;
+    setTimeout(() => {
+      animateRankChanges(glob,'GLOBAL',['gb-h','gb-f']);
+      animateRankChanges(str, 'STR',   ['str-h','str-f']);
+      animateRankChanges(end, 'END',   ['end-h','end-f']);
+      animateRankChanges(met, 'MET',   ['met-h','met-f']);
+      checkLeaders(glob);
+    }, delay);
+
+    // 5. Sauvegarder les nouveaux rangs pour la prochaine comparaison
+    savePrevRanks(glob,'GLOBAL');
+    savePrevRanks(str, 'STR');
+    savePrevRanks(end, 'END');
+    savePrevRanks(met, 'MET');
+
+    // Rafraîchit le message live B17 du ticker
+    loadLiveMessage().then(renderTicker);
+
+  } catch(e) {
+    console.error(e);
+    showError(e.message);
+  }
+}
+
+// ── VIEW ROTATION ──────────────────────────────────────────────
+const VIEWS = ['global','strength','endurance','metcon'];
+let vi = 0, rot = null;
+
+function go(id, manual=false) {
+  if (manual) { clearTimeout(rot); vi = VIEWS.indexOf(id); }
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('on'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('on'));
+  document.getElementById(`v-${id}`).classList.add('on');
+  document.querySelector(`[data-v="${id}"]`).classList.add('on');
+  if (manual) sched();
+}
+function sched() {
+  clearTimeout(rot);
+  rot = setTimeout(() => { vi=(vi+1)%VIEWS.length; go(VIEWS[vi]); sched(); }, C.ROTATE_MS);
+}
+
+// ── PROGRESS BAR ───────────────────────────────────────────────
+let rts = Date.now();
+(function tick() {
+  const p = Math.max(0, 100 - (Date.now()-rts)/C.REFRESH_MS*100);
+  document.getElementById('pfill').style.width = p + '%';
+  requestAnimationFrame(tick);
+})();
+
+// ── CLOCK ──────────────────────────────────────────────────────
+function updateClock() {
+  document.getElementById('clock').textContent =
+    new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+}
+
+// ── TOGGLE THÈME CLAIR / SOMBRE ────────────────────────────
+function toggleTheme() {
+  const isNowLight = document.body.classList.toggle('light');
+  document.getElementById('theme-btn').textContent = isNowLight ? '☾' : '☀';
+}
+updateClock();
+setInterval(updateClock, 1000);
+
+// ── INIT ───────────────────────────────────────────────────────
+loadAll();
+rts = Date.now();
+setInterval(() => { loadAll(); rts = Date.now(); }, C.REFRESH_MS);
+sched();
+initTicker();
+
+// Charger le message live (cellule B17 de Heures_départ) toutes les 10 secondes
+async function refreshLiveMessage() {
+  const msg = await loadCell(C.GID.schedule, 'B17');
+  const el = document.getElementById('ticker-inner');
+  if (!el) return;
+  const base = MESSAGES.join('     ·     ');
+  const live = msg && String(msg).trim() ? `★  ${String(msg).trim()}  ★     ·     ` : '';
+  const full = live + base + '     ·     ' + base;
+  if (el.textContent !== full) {
+    el.textContent = full;
+    const dur = Math.round(full.length * 8 / 80);
+    el.style.animation = 'none';
+    void el.offsetWidth;
+    el.style.animation = `tickScroll ${dur}s linear infinite`;
+  }
+}
+refreshLiveMessage();
+setInterval(refreshLiveMessage, 10_000);
+</script>
+</body>
+</html>
