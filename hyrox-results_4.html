@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>HYROX · Résultats</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,300;0,700;0,900;1,300;1,700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#06090a;--surf:#0c1214;--surf2:#101618;
+  --brd:rgba(255,255,255,.07);--brd2:rgba(255,255,255,.04);
+  --live:#3ddc84;--gold:#f5c030;--gold2:#ffd860;
+  --blue:#7acce8;--orange:#f0a050;--red:#e84040;
+  --w:#eef0ee;--w2:#9aa49c;--w3:#4a5450;--w4:#252d2a;
+  --run:#7acce8;--stat:#f0a050;
+  --serif:'Barlow Condensed',sans-serif;
+  --mono:'DM Mono',monospace;
+  --r:6px;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{min-height:100%;background:var(--bg);color:var(--w);font-family:var(--serif);overflow-x:hidden;}
+
+/* ── BACKGROUND ── */
+body::before{
+  content:'';position:fixed;inset:0;
+  background:radial-gradient(ellipse 80% 60% at 50% -10%, rgba(61,220,132,.07) 0%, transparent 70%);
+  pointer-events:none;z-index:0;
+}
+
+/* ── HEADER ── */
+.hdr{
+  position:sticky;top:0;z-index:100;
+  display:flex;align-items:center;gap:14px;
+  padding:clamp(12px,3vw,18px) clamp(16px,4vw,28px);
+  padding-top:calc(clamp(12px,3vw,18px) + env(safe-area-inset-top,0px));
+  background:rgba(6,9,10,.92);backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--brd);
+}
+.hdr-logo{
+  font-size:clamp(20px,5vw,26px);font-weight:900;letter-spacing:.12em;
+  color:var(--live);text-transform:uppercase;
+}
+.hdr-sub{
+  font-size:clamp(10px,2.5vw,12px);font-weight:300;letter-spacing:.35em;
+  text-transform:uppercase;color:var(--w3);
+}
+.hdr-refresh{
+  margin-left:auto;background:none;border:1px solid var(--brd);
+  border-radius:var(--r);padding:7px 14px;color:var(--w3);
+  font-family:var(--serif);font-size:12px;font-weight:700;
+  letter-spacing:.2em;text-transform:uppercase;cursor:pointer;
+  transition:all .2s;
+}
+.hdr-refresh:active{background:rgba(255,255,255,.05);color:var(--live);border-color:var(--live);}
+
+/* ── SEARCH ── */
+.search-wrap{
+  position:relative;z-index:10;
+  padding:clamp(16px,4vw,28px) clamp(16px,4vw,28px) 0;
+  max-width:720px;margin:0 auto;
+}
+.search-box{
+  width:100%;background:var(--surf);
+  border:1px solid var(--brd);border-radius:var(--r);
+  padding:14px 16px 14px 46px;
+  color:var(--w);font-family:var(--serif);
+  font-size:clamp(15px,3.5vw,18px);font-weight:300;
+  outline:none;transition:border-color .2s;
+  letter-spacing:.03em;
+}
+.search-box::placeholder{color:var(--w3);}
+.search-box:focus{border-color:rgba(61,220,132,.4);}
+.search-icon{position:absolute;left:calc(clamp(16px,4vw,28px) + 14px);top:50%;transform:translateY(-50%);color:var(--w3);font-size:18px;pointer-events:none;}
+.search-results{
+  position:absolute;left:0;right:0;top:calc(100% + 4px);
+  background:var(--surf2);border:1px solid var(--brd);border-radius:var(--r);
+  overflow:hidden;z-index:9999;max-height:280px;overflow-y:auto;
+  box-shadow:0 12px 40px rgba(0,0,0,.5);
+}
+.sr-item{
+  display:flex;align-items:center;gap:12px;padding:12px 16px;
+  cursor:pointer;transition:background .15s;border-bottom:1px solid var(--brd2);
+}
+.sr-item:last-child{border-bottom:none;}
+.sr-item:active{background:rgba(61,220,132,.06);}
+.sr-heat{font-size:11px;font-weight:700;letter-spacing:.15em;color:var(--live);background:rgba(61,220,132,.08);border:1px solid rgba(61,220,132,.2);border-radius:3px;padding:3px 8px;flex-shrink:0;}
+.sr-name{flex:1;}
+.sr-n1{font-size:16px;font-weight:700;color:var(--w);}
+.sr-n2{font-size:12px;color:var(--w3);margin-top:1px;}
+.sr-cat{font-size:11px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--w3);flex-shrink:0;}
+
+/* ── RÉSULTAT ATHLÈTE ── */
+.result-wrap{
+  position:relative;z-index:1;
+  padding:clamp(16px,4vw,24px) clamp(16px,4vw,28px) 80px;
+  max-width:720px;margin:0 auto;
+}
+
+/* Carte hero */
+.hero{
+  background:var(--surf);border:1px solid var(--brd);border-radius:8px;
+  padding:clamp(20px,4vw,32px);margin-bottom:16px;
+  position:relative;overflow:hidden;
+}
+.hero::before{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(135deg,rgba(61,220,132,.05) 0%,transparent 60%);
+  pointer-events:none;
+}
+.hero-top{display:flex;align-items:flex-start;gap:14px;margin-bottom:20px;}
+.hero-heat{
+  font-size:clamp(28px,6vw,40px);font-weight:900;font-style:italic;
+  color:var(--live);line-height:1;flex-shrink:0;
+}
+.hero-names{flex:1;}
+.hero-n1{
+  font-size:clamp(28px,6vw,42px);font-weight:900;letter-spacing:.04em;
+  color:var(--w);line-height:1;text-transform:uppercase;
+}
+.hero-n2{
+  font-size:clamp(16px,3.5vw,22px);font-weight:300;font-style:italic;
+  color:var(--w2);margin-top:2px;
+}
+.hero-cat{
+  display:inline-flex;align-items:center;gap:6px;
+  font-size:clamp(10px,2vw,13px);font-weight:700;letter-spacing:.3em;text-transform:uppercase;
+  color:var(--orange);background:rgba(240,160,80,.1);
+  border:1px solid rgba(240,160,80,.25);border-radius:3px;
+  padding:4px 12px;margin-top:8px;
+}
+
+/* Métriques */
+.hero-metrics{display:flex;gap:0;border-top:1px solid var(--brd);padding-top:18px;}
+.metric{flex:1;text-align:center;padding:0 8px;border-right:1px solid var(--brd);}
+.metric:last-child{border-right:none;}
+.metric-val{
+  font-size:clamp(28px,6vw,40px);font-weight:900;font-style:italic;
+  color:var(--gold);line-height:1;
+}
+.metric-val.p1{color:var(--gold);}
+.metric-val.p2{color:var(--w2);}
+.metric-val.p3{color:var(--orange);}
+.metric-val.px{color:var(--w3);}
+.metric-val.live{color:var(--live);animation:pulseLive 1.4s ease infinite;}
+@keyframes pulseLive{0%,100%{opacity:1}50%{opacity:.5}}
+.metric-lbl{font-size:10px;font-weight:700;letter-spacing:.35em;text-transform:uppercase;color:var(--w3);margin-top:4px;}
+.metric-sub{font-size:clamp(11px,2.5vw,14px);font-weight:300;color:var(--w2);margin-top:2px;}
+
+/* ── TIMELINE ── */
+.tl-title{
+  font-size:11px;font-weight:700;letter-spacing:.4em;text-transform:uppercase;
+  color:var(--w3);padding:0 0 8px;margin-bottom:0;
+}
+.tl{display:flex;flex-direction:column;gap:4px;}
+
+.seg{
+  display:flex;align-items:center;gap:10px;
+  padding:10px 14px;border-radius:var(--r);
+  background:var(--surf2);border:1px solid var(--brd2);
+  transition:border-color .2s;
+}
+.seg.run{border-left:3px solid var(--run);}
+.seg.stat{border-left:3px solid var(--stat);}
+.seg.current{border-color:rgba(61,220,132,.35);background:rgba(61,220,132,.04);}
+.seg.pending{opacity:.35;}
+
+.seg-num{
+  font-size:10px;font-weight:700;letter-spacing:.1em;color:var(--w3);
+  width:22px;text-align:right;flex-shrink:0;
+}
+.seg-name{
+  flex:1;font-size:clamp(13px,3vw,16px);font-weight:700;
+  letter-spacing:.06em;text-transform:uppercase;
+}
+.seg.run .seg-name{color:var(--run);}
+.seg.stat .seg-name{color:var(--stat);}
+.seg.pending .seg-name{color:var(--w3);}
+
+.seg-times{display:flex;flex-direction:column;align-items:flex-end;gap:2px;flex-shrink:0;}
+.seg-dur{font-family:var(--mono);font-size:clamp(14px,3vw,17px);font-weight:500;color:var(--w);}
+.seg-dur.run{color:var(--run);}
+.seg-dur.stat{color:var(--stat);}
+.seg-dur.best{color:var(--gold);}
+.seg-start{font-family:var(--mono);font-size:10px;color:var(--w3);}
+
+/* Live chrono dans la timeline */
+.seg-live{
+  font-family:var(--mono);font-size:clamp(14px,3vw,17px);font-weight:700;
+  color:var(--live);animation:pulseLive 1.4s ease infinite;
+}
+
+/* Barre de progression dans les segments */
+.seg-bar{
+  position:absolute;bottom:0;left:0;height:2px;
+  background:var(--live);border-radius:0 0 var(--r) var(--r);
+  transition:width .5s;
+}
+
+/* Séparateur RUN→ATELIER */
+.seg-divider{
+  display:flex;align-items:center;gap:8px;
+  padding:4px 14px;opacity:.4;
+}
+.seg-divider-line{flex:1;height:1px;background:var(--brd);}
+.seg-divider-lbl{font-size:9px;font-weight:700;letter-spacing:.35em;text-transform:uppercase;color:var(--w3);}
+
+/* ── VIDE / LOADING ── */
+.empty{
+  text-align:center;padding:60px 20px;
+  font-size:clamp(14px,3vw,18px);font-weight:300;
+  letter-spacing:.3em;text-transform:uppercase;color:var(--w3);
+}
+.empty-icon{font-size:clamp(36px,8vw,56px);display:block;margin-bottom:16px;}
+.loading{display:flex;align-items:center;justify-content:center;gap:8px;padding:40px;color:var(--w3);}
+.loading::after{content:'';width:16px;height:16px;border:2px solid var(--brd);border-top-color:var(--live);border-radius:50%;animation:spin .8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── TOTAL ── */
+.total-bar{
+  display:flex;align-items:center;justify-content:space-between;
+  background:rgba(61,220,132,.06);border:1px solid rgba(61,220,132,.2);
+  border-radius:var(--r);padding:14px 16px;margin-top:8px;
+}
+.total-lbl{font-size:12px;font-weight:700;letter-spacing:.4em;text-transform:uppercase;color:var(--live);}
+.total-val{font-family:var(--mono);font-size:clamp(22px,5vw,30px);font-weight:500;color:var(--w);}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div>
+    <div class="hdr-logo">HYROX</div>
+    <div class="hdr-sub">Résultats Athlète</div>
+  </div>
+  <button class="hdr-refresh" onclick="reload()">↻ Actualiser</button>
+</div>
+
+<div class="search-wrap" id="search-wrap">
+  <span class="search-icon">🔍</span>
+  <input class="search-box" id="search-input" type="search"
+    placeholder="Rechercher un athlète ou numéro de heat…"
+    oninput="onSearch()" autocomplete="off" autocorrect="off" spellcheck="false">
+  <div class="search-results" id="search-results" style="display:none"></div>
+</div>
+
+<div class="result-wrap" id="result-wrap">
+  <div class="empty" id="empty-state">
+    <span class="empty-icon">🏆</span>
+    Cherche ton nom<br>pour voir tes résultats
+  </div>
+</div>
+
+<script>
+/* ════════════ CONFIG ════════════ */
+const SHEET_ID = '1ZVU8qFVhMkMAunN7oeI6pf9NmdEfQAlhJiKsFOlgSXE';
+const GID      = '1193961413';
+
+/* ════════════ SEGMENTS ════════════ */
+const SEGS = [
+  {key:'run_1',       label:'Run 1',         startC:'start_run_1',       endC:'end_run_1',         type:'run'},
+  {key:'ski',         label:'SkiErg',         startC:'start_ski',         endC:'end_ski',            type:'stat'},
+  {key:'run_2',       label:'Run 2',          startC:'start_run_2',       endC:'end_run_2',          type:'run'},
+  {key:'sled_push',   label:'Sled Push',      startC:'start_sled_push',   endC:'end_sled_push',      type:'stat'},
+  {key:'run_3',       label:'Run 3',          startC:'start_run_3',       endC:'end_run_3',          type:'run'},
+  {key:'sled_pull',   label:'Sled Pull',      startC:'start_sled_pull',   endC:'end_sled_pull',      type:'stat'},
+  {key:'run_4',       label:'Run 4',          startC:'start_run_4',       endC:'end_run_4',          type:'run'},
+  {key:'burpees',     label:'Burpee Jumps',   startC:'start_burpees',     endC:'end_burpees',        type:'stat'},
+  {key:'run_5',       label:'Run 5',          startC:'start_run_5',       endC:'end_run_5',          type:'run'},
+  {key:'row',         label:'RowErg',         startC:'start_row',         endC:'end_row',            type:'stat'},
+  {key:'run_6',       label:'Run 6',          startC:'start_run_6',       endC:'end_run_6',          type:'run'},
+  {key:'farmer_carry',label:'Farmer Carry',   startC:'start_farmer_carry',endC:'end_farmer_carry',   type:'stat'},
+  {key:'run_7',       label:'Run 7',          startC:'start_run_7',       endC:'end_run_7',          type:'run'},
+  {key:'lunges',      label:'Sandbag Lunges', startC:'start_lunges',      endC:'end_lunges',         type:'stat'},
+  {key:'run_8',       label:'Run 8',          startC:'start_run_8',       endC:'end_run_8',          type:'run'},
+  {key:'wall_ball',   label:'Wall Balls',     startC:'start_wall_ball',   endC:'end_wall_b',         type:'stat'},
+];
+
+/* ════════════ STATE ════════════ */
+let _data = [], _selected = null, _liveT = null;
+
+/* ════════════ HELPERS ════════════ */
+function isDate(v){return /1899|^(Mon|Tue|Wed|Thu|Fri|Sat|Sun)|^Date\(/.test(String(v));}
+function col(r,keys){
+  for(const k of keys){const v=(r[k]||'').toString().trim();if(v&&v.length<60&&!isDate(v))return v;}
+  return '';
+}
+function getName(r){
+  const n1=col(r,['nom1','Nom1','nom 1','Nom 1']);
+  const p1=col(r,['prenom1','prénom1','Prenom1','Prénom1','prenom 1','prénom 1']);
+  const n2=col(r,['nom2','Nom2','nom 2','Nom 2']);
+  const p2=col(r,['prenom2','prénom2','Prenom2','Prénom2','prenom 2','prénom 2']);
+  return{main:`${n1} ${p1}`.trim(),partner:n2?`${n2} ${p2}`.trim():'',nom:n1,prenom:p1};
+}
+function timeToSec(v){
+  if(!v)return null;
+  const m=String(v).match(/(\d{1,2}):(\d{2}):(\d{2})/);
+  if(!m)return null;
+  return +m[1]*3600 + +m[2]*60 + +m[3];
+}
+function fmtTime(v){
+  const m=String(v||'').match(/(\d{1,2}):(\d{2})(?::(\d{2}))?/);
+  if(!m)return null;
+  return`${m[1].padStart(2,'0')}:${m[2]}${m[3]?':'+m[3]:''}`;
+}
+function fmtDur(sec){
+  if(sec==null||sec<0)return null;
+  const m=Math.floor(sec/60),s=sec%60;
+  return`${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+}
+function fmtTotal(sec){
+  if(sec==null)return null;
+  const h=Math.floor(sec/3600),m=Math.floor((sec%3600)/60),s=sec%60;
+  return h>0?`${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`:`${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+}
+function nowSec(){const n=new Date();return n.getHours()*3600+n.getMinutes()*60+n.getSeconds();}
+function normRow(r){
+  const o={};
+  const norm=s=>String(s).toLowerCase().replace(/\s+/g,'');
+  for(const k in r){o[norm(k)]=r[k];o[k]=r[k];}
+  return o;
+}
+
+/* ════════════ CHARGEMENT ════════════ */
+function loadSheet(){
+  return new Promise((res,rej)=>{
+    const cb=`_gv${Date.now()}`;const s=document.createElement('script');
+    window[cb]=(resp)=>{delete window[cb];s.remove();
+      if(resp.status!=='ok'){rej(new Error('Sheet inaccessible'));return;}
+      const cols=resp.table.cols.map(c=>c.label||c.id);
+      res((resp.table.rows||[]).map(row=>{
+        const o={};(row.c||[]).forEach((c,i)=>{o[cols[i]]=c?.f||c?.v!=null?String(c.f||c.v):'';});
+        return normRow(o);
+      }));
+    };
+    s.onerror=()=>{delete window[cb];rej(new Error('Réseau'));};
+    s.src=`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json;responseHandler:${cb}&gid=${GID}&t=${Date.now()}`;
+    document.head.appendChild(s);
+  });
+}
+async function reload(){
+  document.getElementById('result-wrap').innerHTML='<div class="loading">Chargement</div>';
+  try{
+    const raw=await loadSheet();
+    _data=raw.filter(r=>{
+      const h=(r.heat||'').toString().trim();
+      return h&&!isNaN(+h)&&+h>0&&+h<100&&getName(r).main;
+    });
+    document.getElementById('result-wrap').innerHTML='<div class="empty" id="empty-state"><span class="empty-icon">🏆</span>Cherche ton nom<br>pour voir tes résultats</div>';
+    if(_selected){
+      const refresh=_data.find(r=>r.heat===_selected.heat);
+      if(refresh)showResult(refresh);
+    }
+  }catch(e){
+    document.getElementById('result-wrap').innerHTML=`<div class="empty"><span class="empty-icon">⚠️</span>Erreur : ${e.message}</div>`;
+  }
+}
+
+/* ════════════ SEARCH ════════════ */
+// Stockage global des résultats — accessible depuis les onclick inline
+window._MC = [];
+
+window.pickIdx = function(i){
+  const r = window._MC[i];
+  if(!r) return;
+  document.getElementById('search-input').value = '';
+  document.getElementById('search-results').style.display = 'none';
+  document.getElementById('search-input').blur();
+  showResult(r);
+};
+
+function onSearch(){
+  const q = (document.getElementById('search-input').value||'').toLowerCase().trim();
+  const res = document.getElementById('search-results');
+  if(!q || q.length < 2){ res.style.display='none'; return; }
+
+  window._MC = _data.filter(r=>{
+    const{main,partner} = getName(r);
+    return main.toLowerCase().includes(q)
+        || partner.toLowerCase().includes(q)
+        || (r.heat||'').toString().includes(q);
+  }).slice(0,8);
+
+  if(!window._MC.length){ res.style.display='none'; return; }
+
+  res.style.display = '';
+  res.innerHTML = window._MC.map((r,i)=>{
+    const{main,partner} = getName(r);
+    // onclick direct sur le div — le plus simple et fiable possible
+    return '<div class="sr-item" onclick="pickIdx('+i+')">'
+      + '<div class="sr-heat">H'+r.heat+'</div>'
+      + '<div class="sr-name">'
+      +   '<div class="sr-n1">'+main+'</div>'
+      +   (partner ? '<div class="sr-n2">'+partner+'</div>' : '')
+      + '</div>'
+      + '<div class="sr-cat">'+(r.categorie||'')+'</div>'
+      + '</div>';
+  }).join('');
+}
+
+function selectAth(heat){
+  const h = String(heat).trim();
+  const r = _data.find(a => String(a.heat||'').trim() === h);
+  if(r) pickIdx(window._MC.indexOf(r));
+}
+
+/* ════════════ AFFICHAGE RÉSULTAT ════════════ */
+function getCatRank(r){
+  const cat=r.categorie||'',gen=r.genre||'';
+  const same=_data.filter(a=>a.categorie===cat&&a.genre===gen);
+  const withTime=same.filter(a=>timeToSec(a.final_time||a.finaltime)!=null);
+  if(!withTime.length)return{rank:null,total:same.length};
+  withTime.sort((a,b)=>(timeToSec(a.final_time||a.finaltime)||9999)-(timeToSec(b.final_time||b.finaltime)||9999));
+  const idx=withTime.findIndex(a=>a.heat===r.heat);
+  return{rank:idx>=0?idx+1:null,total:same.length,finished:withTime.length};
+}
+function rankCls(rank){return rank===1?'p1':rank===2?'p2':rank===3?'p3':'px';}
+
+function showResult(r){
+  _selected=r;
+  if(_liveT){clearInterval(_liveT);_liveT=null;}
+  const wrap=document.getElementById('result-wrap');
+  wrap.innerHTML=buildResultHTML(r);
+  // Live chrono update
+  const hasLive=SEGS.some(seg=>{const s=r[seg.startC]||r[seg.startC.replace('_','')];return s&&!(r[seg.endC]||r[seg.endC.replace('_','')]);});
+  if(hasLive){_liveT=setInterval(()=>updateLive(r),1000);}
+}
+
+function buildResultHTML(r){
+  const{main,partner,nom,prenom}=getName(r);
+  const{rank,total,finished}=getCatRank(r);
+  const finalSec=timeToSec(r.final_time||r.finaltime);
+  const raceStartSec=timeToSec(r.start_run_1||r.startrun1);
+  const now=nowSec();
+  const isRacing=raceStartSec!=null&&!finalSec;
+  const elapsed=isRacing?Math.max(0,now-raceStartSec):null;
+
+  // Calcul des splits
+  const splits=SEGS.map(seg=>{
+    const sv=r[seg.startC]||'';
+    const ev=r[seg.endC]||'';
+    const ss=timeToSec(sv),es=timeToSec(ev);
+    const dur=(ss!=null&&es!=null&&es>ss)?es-ss:null;
+    const active=ss!=null&&es==null&&raceStartSec!=null;
+    return{...seg,sv,ev,ss,es,dur,active};
+  });
+
+  // Meilleur segment par type (pour highlight)
+  const runDurs=splits.filter(s=>s.type==='run'&&s.dur!=null).map(s=>s.dur);
+  const statDurs=splits.filter(s=>s.type==='stat'&&s.dur!=null).map(s=>s.dur);
+  const bestRun=runDurs.length?Math.min(...runDurs):null;
+  const bestStat=statDurs.length?Math.min(...statDurs):null;
+
+  const isSolo=(r.categorie||'').includes('Solo');
+  const catColor=isSolo?'var(--blue)':'var(--orange)';
+  const catBg=isSolo?'rgba(122,204,232,.1)':'rgba(240,160,80,.1)';
+  const catBrd=isSolo?'rgba(122,204,232,.25)':'rgba(240,160,80,.25)';
+
+  // ── Hero ──
+  let html=`<div class="hero">
+    <div class="hero-top">
+      <div class="hero-heat">H${r.heat}</div>
+      <div class="hero-names">
+        <div class="hero-n1">${nom} <span style="font-weight:300;font-style:italic;opacity:.7">${prenom}</span></div>
+        ${partner?`<div class="hero-n2">/ ${partner}</div>`:''}
+        <div class="hero-cat" style="color:${catColor};background:${catBg};border-color:${catBrd}">${r.categorie||''}${r.genre?' · '+r.genre:''}</div>
+      </div>
+    </div>
+    <div class="hero-metrics">
+      <div class="metric">
+        <div class="metric-val ${rank?rankCls(rank):'px'}">${rank||'—'}</div>
+        <div class="metric-lbl">Classement</div>
+        <div class="metric-sub">${finished||0} / ${total} classés</div>
+      </div>
+      <div class="metric">
+        <div class="metric-val ${finalSec?'':'live'}" id="total-time">${finalSec?fmtTotal(finalSec):(elapsed!=null?fmtTotal(elapsed):'—')}</div>
+        <div class="metric-lbl">Temps total</div>
+        <div class="metric-sub">${finalSec?'Officiel':(elapsed!=null?'En cours':'—')}</div>
+      </div>
+      <div class="metric">
+        <div class="metric-val px">${splits.filter(s=>s.dur!=null).length} / 16</div>
+        <div class="metric-lbl">Segments</div>
+        <div class="metric-sub">complétés</div>
+      </div>
+    </div>
+  </div>`;
+
+  // ── Timeline ──
+  html+=`<div class="tl-title">Détail de la course</div><div class="tl">`;
+  splits.forEach((seg,i)=>{
+    const isBest=seg.dur!=null&&((seg.type==='run'&&seg.dur===bestRun)||(seg.type==='stat'&&seg.dur===bestStat));
+    let durHTML='<span style="color:var(--w3)">—</span>';
+    let startHTML='';
+    let cls='seg '+seg.type;
+
+    if(seg.active){
+      const liveSec=Math.max(0,now-seg.ss);
+      durHTML=`<span class="seg-live" data-liveseg="${seg.key}" data-start="${seg.ss}">${fmtDur(liveSec)}</span>`;
+      cls+=' current';
+    } else if(seg.dur!=null){
+      const durCls=isBest?'seg-dur best':`seg-dur ${seg.type}`;
+      durHTML=`<span class="${durCls}">${fmtDur(seg.dur)}${isBest?' ★':''}</span>`;
+    } else if(!seg.ss){
+      cls+=' pending';
+    }
+    if(seg.ss!=null)startHTML=`<div class="seg-start">${fmtTime(seg.sv)||''}</div>`;
+
+    html+=`<div class="${cls}">
+      <div class="seg-num">${String(i+1).padStart(2,'0')}</div>
+      <div class="seg-name">${seg.label}</div>
+      <div class="seg-times">${durHTML}${startHTML}</div>
+    </div>`;
+  });
+  html+='</div>';
+
+  // ── Total bar ──
+  if(finalSec){
+    html+=`<div class="total-bar">
+      <div class="total-lbl">⏱ Temps officiel</div>
+      <div class="total-val">${fmtTotal(finalSec)}</div>
+    </div>`;
+  }
+
+  return html;
+}
+
+function updateLive(r){
+  const now=nowSec();
+  // Chrono total
+  const raceStartSec=timeToSec(r.start_run_1||r.startrun1);
+  const totalEl=document.getElementById('total-time');
+  if(totalEl&&raceStartSec!=null)totalEl.textContent=fmtTotal(Math.max(0,now-raceStartSec));
+  // Chronos segments actifs
+  document.querySelectorAll('[data-liveseg]').forEach(el=>{
+    const start=+el.dataset.start;
+    if(!isNaN(start))el.textContent=fmtDur(Math.max(0,now-start));
+  });
+}
+
+// Cliquer ailleurs ferme la dropdown
+document.addEventListener('click',e=>{
+  if(!e.target.closest('#search-wrap')){
+    document.getElementById('search-results').style.display='none';
+  }
+});
+
+/* ════════════ INIT ════════════ */
+reload();
+setInterval(reload,20_000);
+</script>
+</body>
+</html>
