@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>HYROX · Juge</title>
+<style>
+:root{
+  --bg:#080c09;--surf:#0e1610;--surf2:#111811;
+  --brd:rgba(61,220,132,.13);--brd2:rgba(255,255,255,.06);
+  --live:#3ddc84;--gold:#f5c030;--orange:#f0a050;--red:#e84040;--blue:#7acce8;
+  --w:#f0f0ee;--w2:#b0b8b2;--w3:#5a6258;--w4:#2e3630;
+  --sans:system-ui,-apple-system,sans-serif;--mono:'Courier New',monospace;--r:8px;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;min-height:100%;background:var(--bg);color:var(--w);font-family:var(--sans);overflow:hidden;}
+
+/* ── HEADER ── */
+.hdr{display:flex;align-items:center;gap:10px;padding:12px 14px;padding-top:calc(12px + env(safe-area-inset-top,0px));background:var(--surf);border-bottom:1px solid var(--brd);flex-shrink:0;min-height:56px;}
+.hdr-back{width:36px;height:36px;display:flex;align-items:center;justify-content:center;background:none;border:1px solid var(--brd);border-radius:6px;color:var(--w3);font-size:20px;cursor:pointer;flex-shrink:0;}
+.hdr-back:active{background:rgba(255,255,255,.06);}
+.hdr-title{flex:1;font-size:17px;font-weight:800;letter-spacing:.03em;color:var(--w);}
+.hdr-clock{font-family:var(--mono);font-size:17px;font-weight:600;color:var(--w2);flex-shrink:0;}
+
+/* ── SCREENS ── */
+.screen{display:none;flex-direction:column;height:calc(100vh - 56px - env(safe-area-inset-top,0px));overflow:hidden;height:calc(100dvh - 56px - env(safe-area-inset-top,0px));}
+.screen.on{display:flex;}
+
+/* ══ SELECT ══ */
+.sel-list{flex:1;overflow-y:auto;padding:10px 10px calc(40px + env(safe-area-inset-bottom, 0px)) 10px;}
+.sel-sect{font-size:10px;font-weight:700;letter-spacing:.4em;text-transform:uppercase;color:var(--w3);padding:12px 4px 5px;}
+.pc{display:flex;align-items:center;gap:12px;background:var(--surf);border:1px solid var(--brd);border-radius:var(--r);padding:15px 14px;margin-bottom:7px;cursor:pointer;transition:border-color .15s,background .15s;-webkit-user-select:none;user-select:none;}
+.pc:active{background:rgba(61,220,132,.06);border-color:rgba(61,220,132,.35);}
+.pc-icon{width:40px;height:40px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
+.run-ic{background:rgba(122,204,232,.1);}
+.stat-ic{background:rgba(240,160,80,.1);}
+.pc-info{flex:1;}
+.pc-name{font-size:16px;font-weight:700;color:var(--w);}
+.pc-sub{font-size:12px;color:var(--w3);margin-top:2px;}
+.pc-arr{color:var(--w4);font-size:22px;}
+
+/* ══ STATION ══ */
+/* Statut bar */
+.sta-bar{display:flex;gap:0;flex-shrink:0;background:var(--surf2);border-bottom:1px solid var(--brd);}
+.sb{flex:1;display:flex;flex-direction:column;align-items:center;padding:8px 4px;border-right:1px solid var(--brd);}
+.sb:last-child{border-right:none;}
+.sb-val{font-family:var(--mono);font-size:20px;font-weight:700;}
+.sb-val.green{color:var(--live);}
+.sb-val.orange{color:var(--orange);}
+.sb-val.gray{color:var(--w3);}
+.sb-lbl{font-size:9px;font-weight:700;letter-spacing:.3em;text-transform:uppercase;color:var(--w3);margin-top:1px;}
+
+/* Liste principale */
+.sta-list{flex:1;overflow-y:auto;padding:8px;}
+.sta-list::-webkit-scrollbar{width:0;}
+
+/* Carte athlète — grand tap */
+.ac{
+  display:flex;align-items:center;gap:10px;
+  border-radius:var(--r);padding:13px 14px;margin-bottom:6px;
+  cursor:pointer;-webkit-user-select:none;user-select:none;
+  transition:transform .08s,opacity .2s;
+  border:1px solid var(--brd2);background:var(--surf);
+  position:relative;overflow:hidden;
+}
+.ac:active{transform:scale(.975);}
+
+/* États */
+.ac.state-enter{ border-left:3px solid var(--live); }
+.ac.state-exit { border-left:3px solid var(--orange); }
+.ac.state-done { opacity:.38; border-left:3px solid var(--w4); pointer-events:none; }
+.ac.state-wait { border-left:3px solid var(--w4); opacity:.6; }
+
+/* Flash animations */
+.ac.state-soon{border-left:3px solid var(--blue);opacity:.8;}
+.ac.flash-soon{animation:fSoon .55s ease;}
+@keyframes fSoon{0%{background:rgba(122,204,232,.25);border-color:var(--blue)}100%{background:var(--surf)}}
+.ac.flash-enter{animation:fEn .55s ease;}
+.ac.flash-exit {animation:fEx .55s ease;}
+@keyframes fEn{0%{background:rgba(61,220,132,.3);border-color:var(--live)}100%{background:var(--surf)}}
+@keyframes fEx{0%{background:rgba(240,160,80,.25);border-color:var(--orange)}100%{background:var(--surf)}}
+
+.ac-heat{font-size:11px;font-weight:700;letter-spacing:.1em;color:var(--live);background:rgba(61,220,132,.08);border:1px solid rgba(61,220,132,.2);border-radius:3px;padding:3px 6px;flex-shrink:0;text-align:center;min-width:30px;}
+.ac-names{flex:1;min-width:0;}
+.ac-n1{font-size:15px;font-weight:700;color:var(--w);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.ac-n2{font-size:12px;color:var(--w3);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.ac-right{display:flex;flex-direction:column;align-items:flex-end;gap:3px;flex-shrink:0;}
+.ac-action{font-size:10px;font-weight:800;letter-spacing:.25em;text-transform:uppercase;padding:3px 8px;border-radius:4px;}
+.ac-action.enter{color:var(--live);background:rgba(61,220,132,.1);}
+.ac-action.exit {color:var(--orange);background:rgba(240,160,80,.1);}
+.ac-action.done {color:var(--w3);}
+.ac-time{font-family:var(--mono);font-size:11px;color:var(--w3);}
+
+/* Section headers dans liste */
+.list-sect{font-size:9px;font-weight:700;letter-spacing:.4em;text-transform:uppercase;color:var(--w4);padding:8px 4px 3px;}
+
+/* ══ LOG ══ */
+.log-bar{flex-shrink:0;background:var(--surf2);border-top:1px solid var(--brd);max-height:100px;overflow-y:auto;}
+.log-bar::-webkit-scrollbar{height:0;width:0;}
+.log-row{display:flex;align-items:center;gap:8px;padding:6px 14px;border-bottom:1px solid rgba(255,255,255,.03);}
+.log-t{font-family:var(--mono);font-size:11px;color:var(--live);flex-shrink:0;}
+.log-n{font-size:12px;color:var(--w2);flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.log-act{font-size:10px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;padding:2px 6px;border-radius:3px;flex-shrink:0;}
+.log-act.enter{color:var(--live);background:rgba(61,220,132,.1);}
+.log-act.exit {color:var(--orange);background:rgba(240,160,80,.1);}
+.log-undo{font-size:11px;color:var(--w3);cursor:pointer;padding:2px 8px;border:1px solid var(--brd);border-radius:3px;flex-shrink:0;}
+.log-undo:active{background:rgba(255,255,255,.06);}
+.log-empty{padding:8px 14px;font-size:11px;color:var(--w4);font-style:italic;}
+
+/* ══ TOAST ══ */
+#toast{
+  position:fixed;bottom:18px;left:50%;transform:translateX(-50%) translateY(80px);
+  font-size:14px;font-weight:800;letter-spacing:.1em;
+  padding:11px 24px;border-radius:30px;z-index:999;white-space:nowrap;pointer-events:none;
+  transition:transform .28s cubic-bezier(.34,1.56,.64,1);
+}
+#toast.enter{background:var(--live);color:#030b05;}
+#toast.exit{background:var(--orange);color:#1a0800;}
+#toast.undo{background:var(--surf);color:var(--w2);border:1px solid var(--brd);}
+#toast.show{transform:translateX(-50%) translateY(0);}
+
+/* ══ MODAL ══ */
+#modal{position:fixed;inset:0;background:rgba(0,0,0,.85);display:flex;align-items:flex-end;z-index:998;opacity:0;pointer-events:none;transition:opacity .2s;}
+#modal.show{opacity:1;pointer-events:auto;}
+#mc{width:100%;background:var(--surf);border-top:1px solid var(--brd);border-radius:12px 12px 0 0;padding:22px 18px 38px;transform:translateY(100%);transition:transform .3s cubic-bezier(.34,1.2,.64,1);}
+#modal.show #mc{transform:translateY(0);}
+.ml{font-size:11px;font-weight:700;letter-spacing:.35em;text-transform:uppercase;margin-bottom:6px;}
+.ml.enter{color:var(--live);}
+.ml.exit{color:var(--orange);}
+.mn{font-size:20px;font-weight:800;color:var(--w);margin-bottom:4px;}
+.mp{font-family:var(--mono);font-size:14px;color:var(--orange);margin-bottom:18px;}
+.mbtns{display:flex;gap:10px;}
+.mbtn{flex:1;padding:14px;border-radius:var(--r);border:none;font-size:13px;font-weight:800;letter-spacing:.15em;text-transform:uppercase;cursor:pointer;}
+.mbtn:active{opacity:.75;}
+.mbtn.cancel{background:rgba(255,255,255,.07);color:var(--w2);}
+.mbtn.go.enter{background:var(--live);color:#030b05;}
+.mbtn.go.exit{background:var(--orange);color:#1a0800;}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <button class="hdr-back" id="back-btn" onclick="goBack()" style="display:none">←</button>
+  <div class="hdr-title" id="hdr-title">HYROX · Juge</div>
+  <div class="hdr-clock" id="clock">--:--:--</div>
+</div>
+
+<div class="screen on" id="s-sel">
+  <div class="sel-list">
+    <div class="sel-sect">Course</div>
+    <div class="pc" onclick="openStation('runs')">
+      <div class="pc-icon run-ic">🏃</div>
+      <div class="pc-info"><div class="pc-name">Runs</div><div class="pc-sub">Run 1 à Run 8 · détection automatique</div></div>
+      <div class="pc-arr">›</div>
+    </div>
+    <div class="sel-sect">Ateliers</div>
+    <div id="stat-list"></div>
+  </div>
+</div>
+
+<div class="screen" id="s-sta">
+  <div class="sta-bar" id="sta-bar"></div>
+  <div class="sta-list" id="sta-list"></div>
+  <div class="log-bar" id="log-bar"><div class="log-empty">Aucun pointage</div></div>
+</div>
+
+<div id="toast"></div>
+<div id="modal" onclick="closeModal()">
+  <div id="mc" onclick="event.stopPropagation()">
+    <div class="ml" id="ml"></div>
+    <div class="mn" id="mn"></div>
+    <div class="mp" id="mp"></div>
+    <div class="mbtns">
+      <button class="mbtn cancel" onclick="closeModal()">Annuler</button>
+      <button class="mbtn go" id="mgo" onclick="confirmOverwrite()">Écraser</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ════════════════ CONFIG ════════════════ */
+const SHEET_ID = '1ZVU8qFVhMkMAunN7oeI6pf9NmdEfQAlhJiKsFOlgSXE';
+const GID      = '1193961413';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwvkG83hUDoFWICDo98M_tq4xzSjn8cutQuSnM_p3Z69ak6aYm4puop6POpCh0TRKFXQA/exec';
+
+/* ════════════════ POSTES ════════════════ */
+const STATS = [
+  {id:'ski',          label:'SkiErg',         icon:'🎿', colIn:'start_ski',          colOut:'end_ski'},
+  {id:'sled_push',    label:'Sled Push',       icon:'🛷', colIn:'start_sled_push',    colOut:'end_sled_push'},
+  {id:'sled_pull',    label:'Sled Pull',       icon:'🔗', colIn:'start_sled_pull',    colOut:'end_sled_pull'},
+  {id:'burpees',      label:'Burpee Jumps',    icon:'🤸', colIn:'start_burpees',      colOut:'end_burpees'},
+  {id:'row',          label:'RowErg',          icon:'🚣', colIn:'start_row',          colOut:'end_row'},
+  {id:'farmer_carry', label:'Farmer Carry',    icon:'🧺', colIn:'start_farmer_carry', colOut:'end_farmer_carry'},
+  {id:'lunges',       label:'Sandbag Lunges',  icon:'🎒', colIn:'start_lunges',       colOut:'end_lunges'},
+  {id:'wall_ball',    label:'Wall Balls 🏁',   icon:'🏐', colIn:'start_wall_ball',    colOut:'end_wall_ball'},
+];
+// Séquence complète pour détection auto du run
+const SEQ = [
+  {colIn:'start_run_1',colOut:'end_run_1',next:'start_ski',label:'Run 1'},
+  {colIn:'start_ski',colOut:'end_ski',next:'start_run_2',label:'SkiErg'},
+  {colIn:'start_run_2',colOut:'end_run_2',next:'start_sled_push',label:'Run 2'},
+  {colIn:'start_sled_push',colOut:'end_sled_push',next:'start_run_3',label:'Sled Push'},
+  {colIn:'start_run_3',colOut:'end_run_3',next:'start_sled_pull',label:'Run 3'},
+  {colIn:'start_sled_pull',colOut:'end_sled_pull',next:'start_run_4',label:'Sled Pull'},
+  {colIn:'start_run_4',colOut:'end_run_4',next:'start_burpees',label:'Run 4'},
+  {colIn:'start_burpees',colOut:'end_burpees',next:'start_run_5',label:'Burpees'},
+  {colIn:'start_run_5',colOut:'end_run_5',next:'start_row',label:'Run 5'},
+  {colIn:'start_row',colOut:'end_row',next:'start_run_6',label:'RowErg'},
+  {colIn:'start_run_6',colOut:'end_run_6',next:'start_farmer_carry',label:'Run 6'},
+  {colIn:'start_farmer_carry',colOut:'end_farmer_carry',next:'start_run_7',label:'Farmer Carry'},
+  {colIn:'start_run_7',colOut:'end_run_7',next:'start_lunges',label:'Run 7'},
+  {colIn:'start_lunges',colOut:'end_lunges',next:'start_run_8',label:'Lunges'},
+  {colIn:'start_run_8',colOut:'end_run_8',next:'start_wall_ball',label:'Run 8'},
+  {colIn:'start_wall_ball',colOut:'end_wall_b',next:null,label:'Wall Balls'},
+];
+const RUN_SEQS = SEQ.filter(s=>s.label.startsWith('Run'));
+
+/* ════════════════ STATE ════════════════ */
+let _ath=[], _stamps={}, _log=[], _cur=null, _pending=null;
+
+/* ════════════════ CLOCK ════════════════ */
+setInterval(()=>{document.getElementById('clock').textContent=new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit',second:'2-digit'});},1000);
+
+/* ════════════════ SHEET ════════════════ */
+async function loadSheet(){
+  // Essai 1 : Apps Script (pas de cache)
+  try{
+    const r=await fetch(`${SCRIPT_URL}?action=read&t=${Date.now()}`,{cache:'no-store'});
+    if(r.ok){const d=await r.json();if(d.ok)return d.rows;}
+  }catch(e){console.warn('Apps Script read failed, fallback JSONP',e);}
+  // Fallback : JSONP gviz
+  return new Promise((res,rej)=>{
+    const cb=`_g${Date.now()}`;const s=document.createElement('script');
+    window[cb]=(resp)=>{delete window[cb];s.remove();
+      if(resp.status!=='ok'){rej(new Error('Sheet inaccessible'));return;}
+      const cols=resp.table.cols.map(c=>c.label||c.id);
+      res((resp.table.rows||[]).map(row=>{const o={};(row.c||[]).forEach((c,i)=>{o[cols[i]]=c?.v!=null?String(c.v):'';});return o;}));
+    };
+    s.onerror=()=>{delete window[cb];rej(new Error('Réseau'));};
+    s.src=`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json;responseHandler:${cb}&gid=${GID}&t=${Date.now()}`;
+    document.head.appendChild(s);
+  });
+}
+async function refresh(){
+  try{
+    const norm=s=>String(s).toLowerCase().replace(/\s+/g,'');
+    const rawData=await loadSheet();
+    const raw=rawData.map(r=>{const o={};for(const k in r){o[norm(k)]=r[k];o[k]=r[k];}return o;});
+    _ath=raw.filter(r=>{
+      const h=(r.heat||r.Heat||'').toString().trim();
+      const hasName=!!(r.nom1||r.Nom1||r['nom 1']||r['nom1']||r['Nom 1']);
+      return h&&!isNaN(+h)&&+h>0&&+h<100&&hasName;
+    });
+    _ath.forEach(r=>{
+      const h=r.heat||r.Heat;if(!_stamps[h])_stamps[h]={};
+      SEQ.forEach(s=>{
+        [s.colIn,s.colOut].forEach(col=>{
+          const v=r[col]||r[norm(col)]||'';
+          if(v&&v!=='FALSE'&&!_stamps[h][col])_stamps[h][col]=v;
+        });
+      });
+    });
+    if(_cur)render();
+  }catch(e){console.error(e);}
+}
+
+/* ════════════════ SELECT ════════════════ */
+function buildSelect(){
+  document.getElementById('stat-list').innerHTML=STATS.map(p=>`
+    <div class="pc" onclick="openStation('${p.id}')">
+      <div class="pc-icon stat-ic">${p.icon}</div>
+      <div class="pc-info"><div class="pc-name">${p.label}</div><div class="pc-sub">Atelier · tap = entrée ou sortie auto</div></div>
+      <div class="pc-arr">›</div>
+    </div>`).join('');
+}
+function openStation(id){
+  _cur=id;
+  document.getElementById('s-sel').classList.remove('on');
+  document.getElementById('s-sta').classList.add('on');
+  document.getElementById('back-btn').style.display='';
+  const s=id==='runs'?null:STATS.find(p=>p.id===id);
+  document.getElementById('hdr-title').textContent=s?s.label:'Runs';
+  render();
+}
+function goBack(){
+  _cur=null;
+  document.getElementById('s-sta').classList.remove('on');
+  document.getElementById('s-sel').classList.add('on');
+  document.getElementById('back-btn').style.display='none';
+  document.getElementById('hdr-title').textContent='HYROX · Juge';
+}
+
+/* ════════════════ HELPERS NOM ════════════════ */
+function _col(r,keys){
+  const isDate=v=>/1899|^\d{1,2}:\d{2}|^(Mon|Tue|Wed|Thu|Fri|Sat|Sun)|^Date\(/.test(v);
+  for(const k of keys){
+    const v=(r[k]||'').toString().trim();
+    if(v&&v.length<60&&!isDate(v)) return v;
+  }
+  return '';
+}
+function getName(r){
+  const n1=_col(r,['nom1','Nom1','NOM1','nom 1','Nom 1']);
+  const p1=_col(r,['prenom1','prénom1','Prenom1','Prénom1','prenom 1','prénom 1']);
+  const n2=_col(r,['nom2','Nom2','NOM2','nom 2','Nom 2']);
+  const p2=_col(r,['prenom2','prénom2','Prenom2','Prénom2','prenom 2','prénom 2']);
+  return{main:`${n1} ${p1}`.trim(),partner:n2?`${n2} ${p2}`.trim():''};
+}
+
+/* ════════════════ FORMAT HEURE ════════════════ */
+function fmtTime(v){
+  if(!v)return '';
+  // Cas "Sat Dec 30 1899 HH:MM:SS GMT..." → extraire HH:MM:SS
+  const mDate=String(v).match(/(\d{1,2}):(\d{2}):(\d{2})/);
+  if(mDate)return`${mDate[1].padStart(2,'0')}:${mDate[2]}:${mDate[3]}`;
+  return String(v).trim().substring(0,8);
+}
+
+function timeToSec(v){
+  if(!v)return null;
+  const m=String(v).match(/(\d{1,2}):(\d{2}):(\d{2})/);
+  if(!m)return null;
+  return +m[1]*3600 + +m[2]*60 + +m[3];
+}
+function nowSec(){
+  const n=new Date();
+  return n.getHours()*3600+n.getMinutes()*60+n.getSeconds();
+}
+function fmtChrono(sec){
+  const s=Math.max(0,Math.round(sec));
+  const m=Math.floor(s/60),r=s%60;
+  return`${String(m).padStart(2,'0')}:${String(r).padStart(2,'0')}`;
+}
+function parseHHMM(v){
+  if(!v)return null;
+  const m=String(v).match(/(\d{1,2}):(\d{2}):(\d{2})/);
+  if(!m)return null;
+  const d=new Date();d.setHours(+m[1],+m[2],+m[3],0);return d;
+}
+
+/* ════════════════ DÉTECTION AUTOMATIQUE + FILTRAGE ════════════════
+   nextAction : prochain event à enregistrer pour cet athlète
+   isRelevant : l'athlète doit-il apparaître sur ce poste ?
+════════════════════════════════════════════════════════════════ */
+
+// Retourne le colOut du segment qui précède colIn dans la séquence
+function prereq(colIn){
+  const i=SEQ.findIndex(s=>s.colIn===colIn);
+  if(i<=0)return null; // run_1 : pas de prérequis
+  return SEQ[i-1].colOut;
+}
+
+function nextAction(heat){
+  const st=_stamps[heat]||{};
+  if(_cur==='runs'){
+    // Parcourir la séquence COMPLÈTE pour trouver où en est l'athlète
+    for(let i=0;i<SEQ.length;i++){
+      const seg=SEQ[i];
+      // ── Athlète actuellement DANS un atelier ? → masqué des runs
+      if(!seg.label.startsWith('Run')){
+        if(st[seg.colIn]&&!st[seg.colOut]) return null; // en atelier, pas sur un run
+        continue;
+      }
+      // ── C'est un run : vérifier le prérequis
+      const pre=i>0?SEQ[i-1].colOut:null;
+      const preOk=!pre||!!st[pre];
+      if(!preOk) continue; // atelier précédent pas terminé
+      // start_run_1 = horaire fixe, jamais pointé par le juge
+      if(seg.colIn==='start_run_1'){
+        const t=parseHHMM(st['start_run_1']);
+        if(!t||t>new Date()) return null;
+        if(!st[seg.colOut]) return{col:seg.colOut,phase:'exit',label:seg.label};
+        const nextSeg=SEQ[i+1];
+        if(nextSeg&&st[nextSeg.colIn]&&!st[nextSeg.colOut]) return null;
+        continue;
+      }
+      // Prérequis ok → ce run est accessible
+      if(!st[seg.colIn])  return{col:seg.colIn,  phase:'enter',label:seg.label};
+      if(!st[seg.colOut]) return{col:seg.colOut, phase:'exit', label:seg.label};
+      // Run terminé → vérifier si l'athlète est dans l'atelier suivant
+      if(i+1<SEQ.length){
+        const nxt=SEQ[i+1];
+        if(nxt&&st[nxt.colIn]&&!st[nxt.colOut]) return null; // en atelier
+      }
+      // Run terminé → continuer pour trouver le suivant
+    }
+    return null; // tous runs terminés ou en atelier final
+  } else {
+    const p=STATS.find(s=>s.id===_cur);if(!p)return null;
+    if(!st[p.colIn])  return{col:p.colIn,  phase:'enter',label:'Entrée'};
+    if(!st[p.colOut]) return{col:p.colOut, phase:'exit', label:'Sortie'};
+    return null;
+  }
+}
+
+// Un athlète est "relevant" si le prérequis est rempli (ou s'il est déjà dans/passé par ce poste)
+function isRelevant(heat){
+  const st=_stamps[heat]||{};
+  if(_cur==='runs'){
+    const a=nextAction(heat);
+    if(a)return true;
+    // En approche : athlète dans l'atelier JUSTE AVANT un run
+    for(let i=1;i<SEQ.length;i++){
+      const seg=SEQ[i];
+      if(!seg.label.startsWith('Run'))continue;
+      const prevSeg=SEQ[i-1]; // l'atelier avant ce run
+      if(st[prevSeg.colIn]&&!st[prevSeg.colOut]&&!st[seg.colIn]) return true;
+    }
+    // Tous runs terminés → afficher en done
+    const lastRun=RUN_SEQS[RUN_SEQS.length-1];
+    return !!st[lastRun.colOut];
+  } else {
+    const p=STATS.find(s=>s.id===_cur);if(!p)return false;
+    const pre=prereq(p.colIn);
+    // Afficher si : prérequis rempli OU déjà dans l'atelier OU terminé
+    if((!pre||!!st[pre])||!!st[p.colIn]) return true;
+    // En approche : dans le run qui précède cet atelier
+    if(pre){
+      const prevSegIdx=SEQ.findIndex(s=>s.colOut===pre);
+      if(prevSegIdx>=0){
+        const prevSeg=SEQ[prevSegIdx];
+        if(st[prevSeg.colIn]&&!st[prevSeg.colOut]){
+          // Pour run_1 : vérifier que l'heure de départ est passée
+          if(prevSeg.colIn==='start_run_1'){
+            const t=parseHHMM(st['start_run_1']);
+            if(!t||t>new Date()) return false;
+          }
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+}
+
+/* ════════════════ RENDER ════════════════ */
+function render(){
+  if(!_cur)return;
+  const sorted=[..._ath].sort((a,b)=>(+a.heat||99)-(+b.heat||99));
+
+  // ── Groupes
+  const active=[], waiting=[], soon=[], done=[];
+  sorted.forEach(r=>{
+    if(!isRelevant(r.heat))return;
+    const a=nextAction(r.heat);
+    const st2=_stamps[r.heat]||{};
+    if(!a){
+      let isSoon=false;
+      if(_cur==='runs'){
+        for(let i=1;i<SEQ.length;i++){
+          const seg=SEQ[i];if(!seg.label.startsWith('Run'))continue;
+          const prev=SEQ[i-1];
+          if(st2[prev.colIn]&&!st2[prev.colOut]&&!st2[seg.colIn]){isSoon=true;break;}
+        }
+      }
+      if(isSoon)soon.push(r);else done.push(r);
+    }
+    else if(a.phase==='exit'){active.push(r);}
+    else if(a.phase==='enter'){
+      // Vérifier si "en approche" pour atelier (dans le run précédent)
+      let isSoon=false;
+      if(_cur!=='runs'){
+        const p=STATS.find(s=>s.id===_cur);
+        if(p){
+          const pre=prereq(p.colIn);
+          if(pre&&!st2[pre]){
+            const prevIdx=SEQ.findIndex(s=>s.colOut===pre);
+            if(prevIdx>=0&&st2[SEQ[prevIdx].colIn]&&!st2[SEQ[prevIdx].colOut]) isSoon=true;
+          }
+        }
+      }
+      if(isSoon)soon.push(r);else waiting.push(r);
+    }
+  });
+
+  // ── Barre de stats
+  document.getElementById('sta-bar').innerHTML=`
+    <div class="sb"><div class="sb-val orange">${active.length}</div><div class="sb-lbl">En atelier</div></div>
+    <div class="sb"><div class="sb-val gray">${waiting.length}</div><div class="sb-lbl">En attente</div></div>
+    <div class="sb"><div class="sb-val green">${done.length}</div><div class="sb-lbl">Terminé</div></div>`;
+
+  // ── Liste
+  let html='';
+  if(active.length){
+    html+='<div class="list-sect">En cours — tap pour sortie</div>';
+    html+=active.map(r=>cardHTML(r)).join('');
+  }
+  if(waiting.length){
+    if(active.length)html+='<div style="height:4px"></div>';
+    html+='<div class="list-sect">En attente — tap pour entrée</div>';
+    html+=waiting.map(r=>cardHTML(r)).join('');
+  }
+  if(soon.length){
+    if(active.length||waiting.length)html+='<div style="height:4px"></div>';
+    html+='<div class="list-sect" style="color:var(--blue)">En approche — tap dès qu’ils arrivent</div>';
+    html+=soon.map(r=>cardHTML(r,'soon')).join('');
+  }
+  // Label barre de stats adapté
+  const staLabel=_cur==='runs'?'En course':'En atelier';
+  if(done.length){
+    if(active.length||waiting.length||soon.length)html+='<div style="height:4px"></div>';
+    html+='<div class="list-sect">Terminés</div>';
+    html+=done.map(r=>cardHTML(r)).join('');
+  }
+  if(!html)html='<div style="padding:40px;text-align:center;font-size:12px;font-weight:700;letter-spacing:.3em;text-transform:uppercase;color:var(--w4)">Chargement…</div>';
+  document.getElementById('sta-list').innerHTML=html;
+}
+
+function cardHTML(r,mode){
+  const a=nextAction(r.heat);
+  const{main,partner}=getName(r);
+  const st=_stamps[r.heat]||{};
+
+  let stateClass='state-wait', actionHTML='', timeStr='';
+  if(mode==='soon'){
+    stateClass='state-soon';
+    let soonCol=null,soonLabel='';
+    if(_cur==='runs'){
+      const nextRunSeg=RUN_SEQS.find(s=>!st[s.colIn]);
+      soonCol=nextRunSeg?nextRunSeg.colIn:null;
+      soonLabel=nextRunSeg?nextRunSeg.label+' →':'Run ?';
+    } else {
+      const p=STATS.find(s=>s.id===_cur);
+      soonCol=p?p.colIn:null;
+      soonLabel='Entrée';
+    }
+    actionHTML=`<span class="ac-action" style="color:var(--blue);background:rgba(122,204,232,.1)">${soonLabel}</span>`;
+    const{main,partner}=getName(r);
+    return`<div class="ac ${stateClass}" id="ac-soon-${r.heat}" onclick="${soonCol?`tapSoon('${r.heat}','${soonCol}','${soonLabel}')`:''}" >
+      <div class="ac-heat">H${r.heat}</div>
+      <div class="ac-names">
+        <div class="ac-n1">${main}</div>
+        ${partner?`<div class="ac-n2">${partner}</div>`:''}
+      </div>
+      <div class="ac-right">${actionHTML}</div>
+    </div>`;
+  }
+  if(!a){
+    stateClass='state-done';
+    // Heure de sortie
+    const p=_cur==='runs'?null:STATS.find(s=>s.id===_cur);
+    const outVal=p?st[p.colOut]:'';
+    const inVal=p?st[p.colIn]:'';
+    const tOut=timeToSec(outVal),tIn=timeToSec(inVal);
+    const dur=(tOut!=null&&tIn!=null)?tOut-tIn:null;
+    actionHTML=`<span class="ac-action done">✓</span>`;
+    if(dur!=null&&dur>0){
+      actionHTML+=`<span class="ac-duration">${fmtChrono(dur)}</span>`;
+    } else if(outVal){
+      timeStr=fmtTime(outVal);
+    }
+  } else if(a.phase==='exit'){
+    stateClass='state-exit';
+    const startCol=a.col.replace(/^end_/,'start_');
+    const startVal=st[startCol]||'';
+    const startSec=timeToSec(startVal);
+    const elapsed=startSec!=null?Math.max(0,nowSec()-startSec):null;
+    actionHTML=`<span class="ac-action exit">${_cur==='runs'?a.label+' ■':'Sortie'}</span>`;
+    if(elapsed!=null){
+      const chronoCls=elapsed<120?'ac-chrono fast':'ac-chrono';
+      actionHTML+=`<span class="${chronoCls}" data-start="${startSec}" id="ch-${r.heat}">${fmtChrono(elapsed)}</span>`;
+    } else if(startVal){
+      actionHTML+=`<div class="ac-time">${fmtTime(startVal)}</div>`;
+    }
+  } else {
+    stateClass='state-enter';
+    actionHTML=`<span class="ac-action enter">${_cur==='runs'?a.label:'Entrée'}</span>`;
+  }
+
+  return`<div class="ac ${stateClass}" id="ac-${r.heat}" onclick="${a?`tap('${r.heat}')`:''}" >
+    <div class="ac-heat">H${r.heat}</div>
+    <div class="ac-names">
+      <div class="ac-n1">${main}</div>
+      ${partner?`<div class="ac-n2">${partner}</div>`:''}
+    </div>
+    <div class="ac-right">
+      ${actionHTML}
+      ${timeStr?`<div class="ac-time">${timeStr}</div>`:''}
+    </div>
+  </div>`;
+}
+
+/* ════════════════ TAP ════════════════ */
+function nowStr(){return new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit',second:'2-digit'});}
+
+function tap(heat){
+  const a=nextAction(heat);if(!a)return;
+  const existing=(_stamps[heat]||{})[a.col];
+  if(existing){
+    const{main}=getName(_ath.find(r=>r.heat===heat)||{});
+    document.getElementById('ml').textContent='Déjà pointé — Écraser ?';
+    document.getElementById('ml').className=`ml ${a.phase}`;
+    document.getElementById('mn').textContent=`${main} (H${heat})`;
+    document.getElementById('mp').textContent=`Pointé à ${existing}`;
+    document.getElementById('mgo').className=`mbtn go ${a.phase}`;
+    _pending={heat,col:a.col,phase:a.phase};
+    document.getElementById('modal').classList.add('show');
+  } else {
+    doStamp(heat,a.col,a.phase);
+  }
+}
+
+function doStamp(heat,col,phase){
+  const time=nowStr();
+  if(!_stamps[heat])_stamps[heat]={};
+  _stamps[heat][col]=time;
+
+  const{main}=getName(_ath.find(r=>r.heat===heat)||{});
+  const a=nextAction(heat); // futur next (après ce stamp)
+  const labelForLog = col.replace(/^start_|^end_/,'').replace(/_/,' ');
+
+  // Flash
+  const card=document.getElementById(`ac-${heat}`);
+  if(card){card.classList.add(`flash-${phase}`);setTimeout(()=>card.classList.remove(`flash-${phase}`),550);}
+
+  // Toast
+  showToast(phase,`H${heat} · ${time}`);
+
+  // Log
+  _log.unshift({heat,name:main,col,phase,time,label:labelForLog});
+  if(_log.length>30)_log.pop();
+  renderLog();
+
+  sendToSheet(heat,col,time);
+  setTimeout(render,580);
+  setTimeout(refresh,1200); // re-sync après écriture
+}
+
+function tapSoon(heat,col,label){
+  // Tap anticipé : enregistrer le début du run même si l'atelier précédent
+  // n'est pas encore officiellement terminé (le juge voit l'athlète arriver)
+  const existing=(_stamps[heat]||{})[col];
+  if(existing){
+    const{main}=getName(_ath.find(r=>r.heat===heat)||{});
+    document.getElementById('ml').textContent=`Déjà pointé — Écraser ?`;
+    document.getElementById('ml').className='ml enter';
+    document.getElementById('mn').textContent=`${main} (H${heat})`;
+    document.getElementById('mp').textContent=`Pointé à ${existing}`;
+    document.getElementById('mgo').className='mbtn go enter';
+    _pending={heat,col,phase:'enter'};
+    document.getElementById('modal').classList.add('show');
+  } else {
+    doStamp(heat,col,'enter');
+  }
+}
+function confirmOverwrite(){
+  closeModal();
+  if(_pending){doStamp(_pending.heat,_pending.col,_pending.phase);_pending=null;}
+}
+function closeModal(){document.getElementById('modal').classList.remove('show');_pending=null;}
+
+/* ════════════════ LOG ════════════════ */
+function renderLog(){
+  const el=document.getElementById('log-bar');
+  if(!_log.length){el.innerHTML='<div class="log-empty">Aucun pointage</div>';return;}
+  el.innerHTML=_log.slice(0,8).map((l,i)=>`
+    <div class="log-row">
+      <div class="log-t">${l.time}</div>
+      <div class="log-n">H${l.heat} · ${l.name} · ${l.label}</div>
+      <div class="log-act ${l.phase}">${l.phase==='enter'?'ENTRÉE':'SORTIE'}</div>
+      <div class="log-undo" onclick="undoLog(${i})">Annuler</div>
+    </div>`).join('');
+}
+function undoLog(i){
+  const l=_log[i];if(!l)return;
+  if(_stamps[l.heat])delete _stamps[l.heat][l.col];
+  sendToSheet(l.heat,l.col,'');
+  _log.splice(i,1);renderLog();render();showToast('undo','↩ Annulé');
+}
+
+/* ════════════════ TOAST ════════════════ */
+let _tT=null;
+function showToast(phase,msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.className=phase;
+  void t.offsetWidth;t.classList.add('show');
+  if(_tT)clearTimeout(_tT);
+  _tT=setTimeout(()=>t.classList.remove('show'),2200);
+}
+
+/* ════════════════ ENVOI ════════════════ */
+function sendToSheet(heat,col,time){
+  const url=`${SCRIPT_URL}?heat=${encodeURIComponent(heat)}&col=${encodeURIComponent(col)}&time=${encodeURIComponent(time)}`;
+  fetch(url,{method:'GET',mode:'no-cors'}).catch(e=>console.error('send:',e));
+}
+
+/* ════════════════ CHRONO LIVE ════════════════ */
+setInterval(()=>{
+  document.querySelectorAll('[data-start]').forEach(el=>{
+    const startSec=+el.dataset.start;
+    if(isNaN(startSec))return;
+    const elapsed=Math.max(0,nowSec()-startSec);
+    el.textContent=fmtChrono(elapsed);
+    el.className=elapsed<120?'ac-chrono fast':'ac-chrono';
+  });
+},1000);
+
+/* ════════════════ INIT ════════════════ */
+buildSelect();
+refresh();
+setInterval(refresh,5_000);
+// Refresh immédiat quand on revient sur la page (ex: retour depuis une autre app)
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)refresh();});
+</script>
+</body>
+</html>
